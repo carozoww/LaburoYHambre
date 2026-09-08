@@ -1,4 +1,4 @@
-import * runTrabajoService from "../services/runTrabajo.service.js";
+import * as runTrabajoService from "../services/runTrabajo.service.js";
 
 export async function createRunTrabajo(req,res,next){
     try{
