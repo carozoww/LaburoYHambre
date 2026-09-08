@@ -3,11 +3,13 @@ import * as estudiosController from '../controllers/estudios.controller.js';
 
 const router = express.Router();
 
-router.post('/crear',estudiosController.createEstudios);
+// Endpoint comentado ya que se crearán directamente en la base de datos (datos estáticos)
+// router.post('/crear',estudiosController.createEstudios);
 router.get('/ver',estudiosController.returnEstudios);
 router.get('/obtenerEstudio/:idEstudio', estudiosController.obtenerEstudio);
-router.patch('/modificarEstudio/:idEstudio', estudiosController.modificarEstudio);
-router.delete('/eliminarEstudio/:idEstudio', estudiosController.eliminarEstudio);
+// Endpoints comentados por ser entidades estáticas
+// router.patch('/modificarEstudio/:idEstudio', estudiosController.modificarEstudio);
+// router.delete('/eliminarEstudio/:idEstudio', estudiosController.eliminarEstudio);
 
 
 export default router;

@@ -15,6 +15,9 @@ router.get('/obtenerRunTrabajo/:idUsuario', runTrabajoController.obtenerRunTraba
 router.get('/obtenerRunTrabajoActivo/:idUsuario', runTrabajoController.obtenerRunTrabajoActivo);
 router.post('/asignarTrabajo/:idRunTrabajo/:idTrabajo', runTrabajoController.asignarTrabajo);
 router.patch('/aumentarAnio/:idRunTrabajo/:idUsuario', runTrabajoController.aumentarAnio);
+router.patch('/empleado/:idRunTrabajo/:idUsuario', runTrabajoController.empleado);
 
+//este es un endpoint por si queremos que se aumente la edad, el dinero, el año y todo eso de una en vez por separado
+//router.post('/avanzarTurno/:idRunTrabajo', runTrabajoController.avanzarTurno);
 
 export default router;

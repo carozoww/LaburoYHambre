@@ -3,13 +3,15 @@ import * as efectoOpcionController from '../controllers/efectoOpcion.controller.
 
 const router = express.Router();
 
-router.post('/crear/:idEfecto/:idOpcion',efectoOpcionController.createEfectoOpcion);
+// Endpoint comentado ya que se crearán directamente en la base de datos (datos estáticos)
+// router.post('/crear/:idEfecto/:idOpcion',efectoOpcionController.createEfectoOpcion);
 router.get('/ver',efectoOpcionController.returnEfectoOpcion);
 router.get('/ver/:idOpcion',efectoOpcionController.verEfectosOpcion);
 router.get('/ver/:idEfecto',efectoOpcionController.verOpcionesEfecto);
 router.get('/obtenerEfectoOpcion/:idEfectoOpcion', efectoOpcionController.obtenerEfectoOpcion);
-router.patch('/modificarEfectoOpcion/:idEfectoOpcion', efectoOpcionController.modificarEfectoOpcion);
-router.delete('/eliminarEfectoOpcion/:idEfectoOpcion', efectoOpcionController.eliminarEfectoOpcion);
+// Endpoints comentados por ser entidades estáticas
+// router.patch('/modificarEfectoOpcion/:idEfectoOpcion', efectoOpcionController.modificarEfectoOpcion);
+// router.delete('/eliminarEfectoOpcion/:idEfectoOpcion', efectoOpcionController.eliminarEfectoOpcion);
 
 
 export default router;

@@ -19,3 +19,11 @@ export async function returnUser(req,res,next){
         next(err);
     }
 }
+
+export async function obtenerUsuario(req, res, next) {
+    try {
+        // Lógica para obtener el usuario por ID
+    } catch(err) {
+        next(err);
+    }
+}
