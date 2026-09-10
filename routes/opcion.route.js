@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Endpoint comentado ya que se crearán directamente en la base de datos (datos estáticos)
 // router.post('/crear',opcionController.createOpcion);
-router.get('/ver',opcionController.returnOpcion);
+router.get('/evento/:idEvento/opciones', opcionController.returnOpcion);
 router.post('/tomarOpcion/:idEvento/:idRunTrabajo', opcionController.tomarOpcion);
 
 
