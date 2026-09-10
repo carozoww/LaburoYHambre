@@ -15,12 +15,6 @@ export async function getEfectosPorOpcion(idOpcion) {
     const relaciones = await EfectoOpcion.find({ opcion: idOpcion })
         .populate("efecto");
 
-    if (relaciones.length === 0) {
-        const error = new Error("No se encontraron efectos para la opción");
-        error.status = 404;
-        throw error;
-    }
-
     return relaciones;
 }
 
