@@ -14,4 +14,4 @@ const habilidadJugadorSchema = new mongoose.Schema({
     nivel: {type: String, required: true}
 })
 
-const HabilidadJugador = new mongoose.model('HabilidadJugador', habilidadJugadorSchema);
+export const HabilidadJugador = new mongoose.model('HabilidadJugador', habilidadJugadorSchema);

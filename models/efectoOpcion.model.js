@@ -13,5 +13,5 @@ const efectoOpcionSchema = new mongoose.Schema({
     }
 }, {timestamps:true});
 
-const EfectoOpcion = new mongoose.model('EfectoOpcion',efectoOpcionSchema);
+export const EfectoOpcion = new mongoose.model('EfectoOpcion',efectoOpcionSchema);
 

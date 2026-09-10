@@ -5,4 +5,4 @@ const habilidadSchema = new mongoose.Schema({
     categoria: {type:String,required:true}
 }, {timestamps:true})
 
-const Habilidad = new mongoose.model('Habilidad',habilidadSchema);
+export const Habilidad = new mongoose.model('Habilidad',habilidadSchema);

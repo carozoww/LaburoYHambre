@@ -11,5 +11,5 @@ const eventoSchema = new mongoose.Schema({
     cd: {type:Number,required:true}
 }, {timestamps:true})
 
-const Evento = new mongoose.model('Evento',eventoSchema);
+export const Evento = new mongoose.model('Evento',eventoSchema);
 

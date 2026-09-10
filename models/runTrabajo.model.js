@@ -25,5 +25,5 @@ const runTrabajoSchema = new mongoose.Schema({
     dineroGenerado: {type: Number, required:true}
 })
 
-const RunTrabajo = new mongoose.model('RunTrabajo', runTrabajoSchema);
+export const RunTrabajo = new mongoose.model('RunTrabajo', runTrabajoSchema);
 

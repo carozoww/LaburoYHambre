@@ -12,3 +12,9 @@ export async function getUser(){
     const user = User.find();
     return user;
 }
+
+
+export async function getUserById(id){
+  const user = await User.findById(id);
+  return user;
+}

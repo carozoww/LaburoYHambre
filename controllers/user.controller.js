@@ -22,7 +22,8 @@ export async function returnUser(req,res,next){
 
 export async function obtenerUsuario(req, res, next) {
     try {
-        // Lógica para obtener el usuario por ID
+        const user = await userService.getUserById(req.params.idUsuario)
+        res.status(201).json(user);
     } catch(err) {
         next(err);
     }

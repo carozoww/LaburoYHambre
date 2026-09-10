@@ -7,4 +7,4 @@ const efectoSchema = mongoose.Schema({
 
 }, {timestamps:true})
 
-const Efecto = new mongoose.model('Efecto',efectoSchema);
+export const Efecto = new mongoose.model('Efecto',efectoSchema);

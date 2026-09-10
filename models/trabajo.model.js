@@ -29,4 +29,4 @@ const trabajoSchema = new mongoose.Schema({
     } 
 }, {timestamps:true})
 
-const Trabajo = new mongoose.model('Trabajo',trabajoSchema);
+export const Trabajo = new mongoose.model('Trabajo',trabajoSchema);
