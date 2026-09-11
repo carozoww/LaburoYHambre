@@ -12,20 +12,20 @@ const runTrabajoSchema = new mongoose.Schema({
     trabajo:{
         type:mongoose.Schema.Types.ObjectId,
         ref: 'Trabajo',
-        required: true
+        required: false
     },
     estudio:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Estudio',
-        required:true
+        required:false
     },
     salarioActual:{ type:Number,required:true},
     estado: {type:String, enum:['En proceso','Completada'], default:'En proceso'},
     empleado: {type: Boolean, required: true, default: false},
     dineroGenerado: {type: Number, required:true},
     decisionesTomadas: [{
-        evento: {type: mongoose.Schema.Types.ObjectId, ref: 'Evento', required: true},
-        opcion: {type: mongoose.Schema.Types.ObjectId, ref: 'Opcion', required: true},
+        evento: {type: mongoose.Schema.Types.ObjectId, ref: 'Evento', required: false},
+        opcion: {type: mongoose.Schema.Types.ObjectId, ref: 'Opcion', required: false},
         fecha: {type: Date, default: Date.now}
     }]
 })

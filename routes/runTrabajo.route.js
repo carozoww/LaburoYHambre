@@ -10,7 +10,7 @@ router.patch('/aumentarDinero/:idUsuario', runTrabajoController.aumentarDinero);
 router.patch('/aumentarEdad/:idUsuario', runTrabajoController.aumentarEdad);
 router.patch('/modificarEstado/:idUsuario', runTrabajoController.modificarEstado);
 router.post('/asignarEstudio/:idUsuario', runTrabajoController.asignarEstudio);
-router.post('/iniciarRun', runTrabajoController.iniciarRun);
+router.post('/iniciarRun/:idUsuario', runTrabajoController.iniciarRun);
 router.get('/obtenerRunTrabajo/:idUsuario', runTrabajoController.obtenerRunTrabajo);
 router.get('/obtenerRunTrabajoActivo/:idUsuario', runTrabajoController.obtenerRunTrabajoActivo);
 router.post('/asignarTrabajo/:idRunTrabajo/:idTrabajo', runTrabajoController.asignarTrabajo);

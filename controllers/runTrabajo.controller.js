@@ -1,5 +1,6 @@
 import * as runTrabajoService from "../services/runTrabajo.service.js";
 
+
 export async function createRunTrabajo(req,res,next){
     try{
         const runtrabajo = await runTrabajoService.createRunTrabajo(req.body);
@@ -7,7 +8,7 @@ export async function createRunTrabajo(req,res,next){
     }catch(err){
         next(err);
     }
-}
+} 
 
 
 export async function returnRunTrabajo(req,res,next){
@@ -57,7 +58,8 @@ export async function asignarEstudio(req, res, next) {
 
 export async function iniciarRun(req, res, next) {
     try {
-
+        const runTrabajo = await runTrabajoService.startRun(req.params.idUsuario);
+        res.status(201).json(runTrabajo);
     } catch(err) { 
         next(err); 
     }
