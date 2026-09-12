@@ -7,8 +7,11 @@ const eventoSchema = new mongoose.Schema({
     probabilidad: {type: Number,required:true},
     descripcion: {type:String,required:true},
     edadMaxima: {type:Number,required:true},
-    edadMinima: {type:NUmber,required:true},
-    cd: {type:Number,required:true}
+    edadMinima: {type:Number,required:true},
+    cd: {type:Number,required:true},
+    repetible: {type:Boolean,required:true},
+    reqTrabajo: {type:Boolean,required:true},
+    reqEstudio: {type:Boolean,required:true}
 }, {timestamps:true})
 
 export const Evento = new mongoose.model('Evento',eventoSchema);

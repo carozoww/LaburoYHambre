@@ -7,6 +7,6 @@ const router = express.Router();
 // router.post('/crear',eventoController.createEvento);
 router.get('/ver',eventoController.returnEvento);
 router.get('/obtenerOpciones/:idEvento', eventoController.obtenerOpciones);
-router.get('/calcular/:idRunTrabajo', eventoController.calcularOpcion);
-
+router.post('/asignarEvento/:idRunTrabajo/:idEvento/:idHabilidadJugador', eventoController.asignarEvento);
+router.post('/verificarAsignacion/:idRunTrabajo/:idEvento/:idHabilidadJugador', eventoController.verificarAsignacion);
 export default router;
