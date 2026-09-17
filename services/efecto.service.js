@@ -17,15 +17,12 @@ export async function getAllEfectos() {
 
 export async function getEfectoPorId(idEfecto) {
     validarId(idEfecto);
-
     const efecto = await Efecto.findById(idEfecto);
-
     if (!efecto) {
         const error = new Error("Efecto no encontrado");
         error.status = 404;
         throw error;
     }
-
     return efecto;
 }
 
@@ -39,36 +36,43 @@ export async function aplicarEfecto(idEfecto, idRunTrabajo) {
     const efecto = await getEfectoPorId(idEfecto);
 
     if (efecto.tipo !== "MODIFICAR_HABILIDAD") {
-        const error = new Error(`Tipo de efecto no soportado: ${efecto.tipo}`);
-        error.status = 400;
-        throw error;
+        return { message: `Tipo de efecto ${efecto.tipo} no requiere modificar habilidad` };
     }
 
-    const habilidad = await Habilidad.findOne({
+    // Buscar habilidad por nombre o regex flexible
+    let habilidad = await Habilidad.findOne({
         nombre: new RegExp(`^${efecto.objetivo}$`, "i")
     });
 
     if (!habilidad) {
-        const error = new Error("La habilidad objetivo no existe");
-        error.status = 404;
-        throw error;
+        habilidad = await Habilidad.findOne({
+            nombre: new RegExp(`${efecto.objetivo}`, "i")
+        });
     }
 
-    const habilidadJugador = await HabilidadJugador.findOne({
+    if (!habilidad) {
+        console.warn(`Habilidad objetivo '${efecto.objetivo}' no encontrada en DB.`);
+        return null;
+    }
+
+    let habilidadJugador = await HabilidadJugador.findOne({
         runTrabajo: idRunTrabajo,
         habilidad: habilidad._id
     });
 
+    // Si la partida no cuenta con el registro de la habilidad, la creamos
     if (!habilidadJugador) {
-        const error = new Error("La partida no tiene esa habilidad");
-        error.status = 404;
-        throw error;
+        habilidadJugador = await HabilidadJugador.create({
+            runTrabajo: idRunTrabajo,
+            habilidad: habilidad._id,
+            nivel: Math.min(10, Math.max(0, efecto.valor))
+        });
+        return habilidadJugador;
     }
 
-    habilidadJugador.nivel = Math.max(
-        0,
-        habilidadJugador.nivel + efecto.valor
-    );
+    // Incrementar o decrementar el nivel asegurando que llegue hasta el tope de 10
+    const nuevoNivel = habilidadJugador.nivel + efecto.valor;
+    habilidadJugador.nivel = Math.min(10, Math.max(0, nuevoNivel));
 
     return habilidadJugador.save();
 }

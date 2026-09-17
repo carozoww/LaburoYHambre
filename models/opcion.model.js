@@ -6,8 +6,14 @@ const opcionSchema = new mongoose.Schema({
         ref: 'Evento',
         required: true
     },
+    trabajo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Trabajo',
+        required: false
+    },
     titulo: {type:String, required:true},
     texto: {type:String,required:true}
 }, {timestamps:true})
 
 export const Opcion = new mongoose.model('Opcion',opcionSchema);
+

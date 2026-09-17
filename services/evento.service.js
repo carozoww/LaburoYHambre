@@ -90,8 +90,6 @@ export async function verificarAsignacion(idRunTrabajo, idEvento, idHabilidadJug
     }
     
     //verificamos la edad maxima del evento
-    
-
     if(evento.edadMaxima < runTrabajo.edadActual){
         const error = new Error("El evento requiere una edad maxima");
         error.status = 400;

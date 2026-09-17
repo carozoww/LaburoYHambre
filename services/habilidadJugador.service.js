@@ -30,9 +30,29 @@ export async function crearHabilidadJugador(data) {
 
 export async function obtenerHabilidadesPorRun(idRunTrabajo) {
   validarId(idRunTrabajo, "la partida");
-  return HabilidadJugador.find({ runTrabajo: idRunTrabajo }).populate(
-    "habilidad",
-  );
+  let habs = await HabilidadJugador.find({ runTrabajo: idRunTrabajo }).populate("habilidad");
+
+  try {
+    const { Habilidad } = await import("../models/habilidad.model.js");
+    const todasGlobales = await Habilidad.find();
+    if (todasGlobales && todasGlobales.length > habs.length) {
+      const idsExistentes = habs.map((h) => (h.habilidad ? String(h.habilidad._id || h.habilidad) : "")).filter(Boolean);
+      for (const habGlobal of todasGlobales) {
+        if (!idsExistentes.includes(String(habGlobal._id))) {
+          await HabilidadJugador.create({
+            runTrabajo: idRunTrabajo,
+            habilidad: habGlobal._id,
+            nivel: 2,
+          });
+        }
+      }
+      habs = await HabilidadJugador.find({ runTrabajo: idRunTrabajo }).populate("habilidad");
+    }
+  } catch (e) {
+    console.warn("No se pudieron auto-crear habilidades faltantes:", e);
+  }
+
+  return habs;
 }
 
 export async function obtenerTodasHabilidadesJugador() {

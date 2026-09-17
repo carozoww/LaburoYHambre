@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import userRoutes from "./routes/user.route.js"
 import runTrabajoRoutes from "./routes/runTrabajo.route.js"
 import habilidadJugadorRoutes from "./routes/habilidadJugador.route.js"
@@ -10,13 +11,21 @@ import opcionRoutes from "./routes/opcion.route.js"
 import eventoRoutes from "./routes/evento.route.js"
 import efectoRoutes from "./routes/efecto.route.js"
 import efectoOpcionRoutes from "./routes/efectoOpcion.route.js"
+import rankingRoutes from "./routes/ranking.route.js"
 import authenticate from "./middleware/authenticate.js"
 
 const app = express();
 
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
+
 app.use(express.json());
 
 app.use('/usuario', userRoutes);
+app.use('/ranking', rankingRoutes);
 app.use('/runTrabajo', authenticate, runTrabajoRoutes);
 app.use('/habilidadJugador', authenticate, habilidadJugadorRoutes);
 app.use('/estudios', authenticate, estudiosRoutes);
