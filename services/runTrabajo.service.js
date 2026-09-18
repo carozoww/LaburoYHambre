@@ -17,7 +17,7 @@ export async function createRunTrabajo(idJugador) {
     user: idJugador,
     fecha: new Date(),
     edadActual: 18,
-    anioActual: 2027, // Año inicial 2027 como estudiantes de Tecnólogo en Informática
+    anioActual: 2027, // Año inicial 2027
     trabajo: trabajoInicial ? trabajoInicial._id : null,
     estudio: estudioTecnologo ? estudioTecnologo._id : null,
     salarioActual: salarioInicial,
@@ -35,7 +35,7 @@ export async function createRunTrabajo(idJugador) {
     }]
   });
 
-  // Inicializar habilidades del jugador en MongoDB con nivel inicial modesto de 2
+  // Inicializar habilidades del jugador en MongoDB con nivel inicial de 2
   try {
     const habilidadesGlobales = await Habilidad.find();
     if (habilidadesGlobales && habilidadesGlobales.length > 0) {
@@ -141,7 +141,7 @@ export async function increaseEdad(idUsuario) {
 
   const puestoTexto = (runTrabajo.empleado && runTrabajo.trabajo)
     ? `${nombrePuesto} @ ${empresaNombre}`
-    : '🚨 DESPEDIDO / En búsqueda laboral';
+    : 'DESPEDIDO / En búsqueda laboral';
 
   const salarioAnualActual = (runTrabajo.empleado && runTrabajo.trabajo)
     ? (runTrabajo.salarioActual || runTrabajo.trabajo.salarioBase || 0)
@@ -214,8 +214,6 @@ export async function increaseAnio(idRunTrabajo, idUsuario) {
   if (!runTrabajo) {
     throw new Error('Partida no encontrada');
   }
-
-  // Handled inside increaseEdad to keep year and age synchronized
   return runTrabajo;
 }
 
