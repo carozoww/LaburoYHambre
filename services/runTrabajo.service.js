@@ -58,6 +58,11 @@ export async function returnRunTrabajo() {
   return RunTrabajo.find().populate('user trabajo estudio');
 }
 
+export async function returnRunTrabajoDetalle(idRunTrabajo){
+  const runtrabajo = await RunTrabajo.findOne({_id: idRunTrabajo}).populate('trabajo estudio');
+  return runtrabajo; 
+}
+
 export async function returnRunTrabajoById(idUser) {
   return RunTrabajo.find({ user: idUser }).populate('trabajo estudio');
 }
