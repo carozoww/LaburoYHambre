@@ -13,6 +13,7 @@ router.post('/asignarEstudio/:idUsuario', runTrabajoController.asignarEstudio);
 router.post('/iniciarRun/:idUsuario', runTrabajoController.iniciarRun);
 router.get('/obtenerRunTrabajo/:idUsuario', runTrabajoController.obtenerRunTrabajo);
 router.get('/obtenerRunTrabajoActivo/:idUsuario', runTrabajoController.obtenerRunTrabajoActivo);
+router.get('/obtenerRunTrabajoDetalle/:idRunTrabajo',runTrabajoController.obtenerRunTrabajoDetalle);
 router.post('/asignarTrabajo/:idRunTrabajo/:idTrabajo', runTrabajoController.asignarTrabajo);
 router.patch('/aumentarAnio/:idRunTrabajo/:idUsuario', runTrabajoController.aumentarAnio);
 //router.patch('/empleado/:idRunTrabajo/:idUsuario', runTrabajoController.empleado); no se que se supone que es esta funcion empleado, ni siquiera esta en el controller mati
