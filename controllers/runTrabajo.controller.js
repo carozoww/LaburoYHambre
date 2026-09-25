@@ -83,7 +83,7 @@ export async function obtenerRunTrabajo(req, res, next) {
 
 export async function obtenerRunTrabajoDetalle(req,res,next){
   try{
-    const runTrabajo = await runTrabajoService.returnRunTrabajoById(req.params.idRunTrabajo);
+    const runTrabajo = await runTrabajoService.returnRunTrabajoDetalle(req.params.idRunTrabajo);
     res.status(200).json(runTrabajo);
   }catch(err){
     next(err)
