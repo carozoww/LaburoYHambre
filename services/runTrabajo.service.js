@@ -54,8 +54,8 @@ export async function createRunTrabajo(idJugador) {
   return nuevaRun;
 }
 
-export async function returnRunTrabajo() {
-  return RunTrabajo.find().populate('user trabajo estudio');
+export async function returnRunTrabajo(idUser) {
+  return RunTrabajo.find({ user: idUser }).populate('user trabajo estudio');
 }
 
 export async function returnRunTrabajoDetalle(idRunTrabajo){

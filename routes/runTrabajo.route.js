@@ -1,8 +1,11 @@
 import express from "express";
 
 import * as runTrabajoController from '../controllers/runTrabajo.controller.js'
+import { authorizeRun, authorizeUser } from '../middleware/authorizeRun.js';
 
 const router = express.Router();
+router.param('idUsuario', authorizeUser);
+router.param('idRunTrabajo', authorizeRun);
 
 router.post('/crear',runTrabajoController.createRunTrabajo);
 router.get('/ver',runTrabajoController.returnRunTrabajo);

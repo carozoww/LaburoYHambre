@@ -57,7 +57,7 @@ export async function asignarEvento(idRunTrabajo, idEvento, idHabilidadJugador){
 export async function verificarAsignacion(idRunTrabajo, idEvento, idHabilidadJugador){
     const runTrabajo = await RunTrabajo.findById(idRunTrabajo);
     const evento = await Evento.findById(idEvento);
-    const habilidadJugador = await HabilidadJugador.findById(idHabilidadJugador);
+    const habilidadJugador = await HabilidadJugador.findOne({ _id: idHabilidadJugador, runTrabajo: idRunTrabajo });
 
     //verificamos que los datos no sean nulos
     if(!runTrabajo || !evento){

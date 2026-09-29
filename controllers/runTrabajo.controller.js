@@ -2,7 +2,7 @@ import * as runTrabajoService from "../services/runTrabajo.service.js";
 
 export async function createRunTrabajo(req, res, next) {
   try {
-    const runtrabajo = await runTrabajoService.createRunTrabajo(req.body.idUsuario || req.body.userId);
+    const runtrabajo = await runTrabajoService.createRunTrabajo(req.userId);
     res.status(201).json(runtrabajo);
   } catch (err) {
     next(err);
@@ -11,7 +11,7 @@ export async function createRunTrabajo(req, res, next) {
 
 export async function returnRunTrabajo(req, res, next) {
   try {
-    const runtrabajo = await runTrabajoService.returnRunTrabajo();
+    const runtrabajo = await runTrabajoService.returnRunTrabajo(req.userId);
     res.status(200).json(runtrabajo);
   } catch (err) {
     next(err);

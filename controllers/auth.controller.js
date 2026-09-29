@@ -1,26 +1,22 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
+import { verifyPassword } from "../services/user.service.js";
 
 export async function login(req, res, next) {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
-        if (!email) {
-            return res.status(400).json({ message: "El correo electrónico es requerido" });
+        if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+            return res.status(400).json({ message: "Correo y contraseña requeridos" });
         }
 
-        // Buscar usuario en la base de datos de MongoDB
-        let user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
 
-        if(!user){
+        if (!user || !await verifyPassword(password, user.password)) {
             return res.status(401).json({ message: "Email o contraseña incorrectos" });
         }
 
-        if (password && user.password && user.password !== password) {
-            return res.status(401).json({ message: "Email o contraseña incorrectos" });
-        }
-
-        const secret = process.env.JWT_SECRET || "secreto_super_seguro_laburo_y_hambre";
+        const secret = process.env.JWT_SECRET;
         const expiresIn = process.env.JWT_EXPIRES_IN || "24h";
 
         const token = jwt.sign(
