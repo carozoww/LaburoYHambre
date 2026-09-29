@@ -81,11 +81,11 @@ export async function obtenerRunTrabajo(req, res, next) {
   }
 }
 
-export async function obtenerRunTrabajoDetalle(req,res,next){
-  try{
+export async function obtenerRunTrabajoDetalle(req, res, next) {
+  try {
     const runTrabajo = await runTrabajoService.returnRunTrabajoDetalle(req.params.idRunTrabajo);
     res.status(200).json(runTrabajo);
-  }catch(err){
+  } catch (err) {
     next(err)
   }
 }
@@ -104,6 +104,12 @@ export async function asignarTrabajo(req, res, next) {
     const runTrabajo = await runTrabajoService.asignTrabajo(req.params.idRunTrabajo, req.params.idTrabajo || req.body.idTrabajo);
     res.status(200).json(runTrabajo);
   } catch (err) {
+    if (err.message == 'menor') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'El postulante es menor de la edad mínima permitida'
+      });
+    }
     next(err);
   }
 }

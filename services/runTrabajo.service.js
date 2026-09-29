@@ -190,15 +190,23 @@ export async function asignEstudio(idUsuario, idEstudio) {
 
 export async function asignTrabajo(idRunTrabajo, idTrabajo) {
   const runTrabajo = await RunTrabajo.findById(idRunTrabajo);
+
+
   if (!runTrabajo) {
     throw new Error('Partida no encontrada');
   }
+
+
   if (runTrabajo.estado === "Completada") {
     throw new Error('La partida ya se encuentra completada');
   }
   
   const trabajo = await Trabajo.findById(idTrabajo);
   if (trabajo) {
+    if(trabajo.edadMinima > runTrabajo.edadActual){
+      throw new Error('menor');
+    }
+
     runTrabajo.trabajo = trabajo._id;
     runTrabajo.empleado = true;
     runTrabajo.salarioActual = trabajo.salarioBase || trabajo.salarioAnual || 30000;

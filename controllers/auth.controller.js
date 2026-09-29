@@ -12,15 +12,11 @@ export async function login(req, res, next) {
         // Buscar usuario en la base de datos de MongoDB
         let user = await User.findOne({ email });
 
-        // Si no existe, creamos el usuario automáticamente para agilizar pruebas
-        if (!user) {
-            const username = email.split('@')[0] || "Desarrollador";
-            user = await User.create({
-                username,
-                email,
-                password: password || "123456"
-            });
-        } else if (password && user.password && user.password !== password) {
+        if(!user){
+            return res.status(401).json({ message: "Email o contraseña incorrectos" });
+        }
+
+        if (password && user.password && user.password !== password) {
             return res.status(401).json({ message: "Email o contraseña incorrectos" });
         }
 
