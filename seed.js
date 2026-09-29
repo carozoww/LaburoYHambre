@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { connectMongoDB } from './database/conection.js';
-import { User } from './models/user.model.js';
 import { Habilidad } from './models/habilidad.model.js';
 import { Estudio } from './models/estudio.model.js';
 import { Empresa } from './models/empresa.model.js';
@@ -9,27 +8,15 @@ import { Evento } from './models/evento.model.js';
 import { Opcion } from './models/opcion.model.js';
 import { Efecto } from './models/efecto.model.js';
 import { EfectoOpcion } from './models/efectoOpcion.model.js';
-import { RunTrabajo } from './models/runTrabajo.model.js';
-import { HabilidadJugador } from './models/habilidadJugador.model.js';
 
 async function seedDatabase() {
   console.log("🌱 Conectando a MongoDB e iniciando Seeding de LaburoYHambre...");
   await connectMongoDB();
 
-  // Limpiar colecciones anteriores
-  await User.deleteMany({});
-  await Habilidad.deleteMany({});
-  await Estudio.deleteMany({});
-  await Empresa.deleteMany({});
-  await Trabajo.deleteMany({});
-  await Evento.deleteMany({});
-  await Opcion.deleteMany({});
-  await Efecto.deleteMany({});
-  await EfectoOpcion.deleteMany({});
-  await RunTrabajo.deleteMany({});
-  await HabilidadJugador.deleteMany({});
-
-  console.log("🧹 Colecciones limpiadas correctamente.");
+  const catalogos = [Habilidad, Estudio, Empresa, Trabajo, Evento, Opcion, Efecto, EfectoOpcion];
+  if ((await Promise.all(catalogos.map((modelo) => modelo.exists({})))).some(Boolean)) {
+    throw new Error('La base ya contiene datos del juego. Se canceló la carga para no duplicarlos.');
+  }
 
   // 1. Crear las 7 Habilidades Clave Oficiales
   const habBackend = await Habilidad.create({ nombre: "Backend", categoria: "Software" });
@@ -531,57 +518,7 @@ async function seedDatabase() {
 
   console.log("✅ Relaciones EfectoOpcion vinculadas.");
 
-  // 9. Crear Usuarios de prueba & Runs completadas para el Leaderboard
-  const u1 = await User.create({ username: "MatiasDev", email: "matias@test.com", password: "123" });
-  const u2 = await User.create({ username: "CodeNinja", email: "ninja@test.com", password: "123" });
-  const u3 = await User.create({ username: "JuniorHero", email: "junior@test.com", password: "123" });
-
-  await RunTrabajo.create({
-    user: u1._id,
-    fecha: new Date(),
-    edadActual: 65,
-    anioActual: 2074,
-    trabajo: jobVP._id,
-    estudio: estTecnologo._id,
-    salarioActual: 230000,
-    estado: "Completada",
-    empleado: true,
-    dineroGenerado: 2150000,
-    anosEnTrabajoActual: 6,
-    decisionesTomadas: []
-  });
-
-  await RunTrabajo.create({
-    user: u2._id,
-    fecha: new Date(),
-    edadActual: 65,
-    anioActual: 2074,
-    trabajo: jobSenior._id,
-    estudio: estTecnologo._id,
-    salarioActual: 115000,
-    estado: "Completada",
-    empleado: true,
-    dineroGenerado: 1100000,
-    anosEnTrabajoActual: 5,
-    decisionesTomadas: []
-  });
-
-  await RunTrabajo.create({
-    user: u3._id,
-    fecha: new Date(),
-    edadActual: 65,
-    anioActual: 2074,
-    trabajo: jobMid._id,
-    estudio: estTecnologo._id,
-    salarioActual: 60000,
-    estado: "Completada",
-    empleado: true,
-    dineroGenerado: 520000,
-    anosEnTrabajoActual: 3,
-    decisionesTomadas: []
-  });
-
-  console.log("🏆 Seeding completado exitosamente con 7 habilidades oficiales, empresas por Tiers, Seniority y eventos variados.");
+  console.log("🏆 Seeding completado con habilidades, estudios, empresas, trabajos y eventos.");
   process.exit(0);
 }
 
