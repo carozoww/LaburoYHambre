@@ -8,6 +8,7 @@ router.param('idRunTrabajo', authorizeRun);
 // Endpoint comentado ya que se crearán directamente en la base de datos (datos estáticos)
 // router.post('/crear',eventoController.createEvento);
 router.get('/ver',eventoController.returnEvento);
+router.get('/evaluar/:idRunTrabajo', eventoController.evaluarEvento);
 router.get('/obtenerOpciones/:idEvento', eventoController.obtenerOpciones);
 router.post('/asignarEvento/:idRunTrabajo/:idEvento/:idHabilidadJugador', eventoController.asignarEvento);
 router.post('/verificarAsignacion/:idRunTrabajo/:idEvento/:idHabilidadJugador', eventoController.verificarAsignacion);

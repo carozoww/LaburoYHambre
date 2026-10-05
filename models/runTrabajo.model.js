@@ -20,7 +20,8 @@ const runTrabajoSchema = new mongoose.Schema({
         required:false
     },
     salarioActual:{ type:Number,required:true},
-    estado: {type:String, enum:['En proceso','Completada'], default:'En proceso'},
+    estado: {type:String, enum:['En proceso','Completada','FINALIZADA','MUERTO'], default:'En proceso'},
+    muerto: {type: Boolean, default: false},
     empleado: {type: Boolean, required: true, default: false},
     dineroGenerado: {type: Number, required:true},
     anosEnTrabajoActual: {type: Number, default: 0},

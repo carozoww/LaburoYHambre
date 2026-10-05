@@ -10,15 +10,22 @@ import { Efecto } from './models/efecto.model.js';
 import { EfectoOpcion } from './models/efectoOpcion.model.js';
 
 async function seedDatabase() {
-  console.log("🌱 Conectando a MongoDB e iniciando Seeding de LaburoYHambre...");
+  console.log("🌱 Conectando a MongoDB e iniciando Seeding Completo de LaburoYHambre...");
   await connectMongoDB();
 
-  const catalogos = [Habilidad, Estudio, Empresa, Trabajo, Evento, Opcion, Efecto, EfectoOpcion];
-  if ((await Promise.all(catalogos.map((modelo) => modelo.exists({})))).some(Boolean)) {
-    throw new Error('La base ya contiene datos del juego. Se canceló la carga para no duplicarlos.');
-  }
+  // 0. Limpiar catálogos previos para reseeding limpio
+  await Promise.all([
+    Habilidad.deleteMany({}),
+    Estudio.deleteMany({}),
+    Empresa.deleteMany({}),
+    Trabajo.deleteMany({}),
+    Evento.deleteMany({}),
+    Opcion.deleteMany({}),
+    Efecto.deleteMany({}),
+    EfectoOpcion.deleteMany({})
+  ]);
 
-  // 1. Crear las 7 Habilidades Clave Oficiales
+  // 1. Habilidades Clave Oficiales
   const habBackend = await Habilidad.create({ nombre: "Backend", categoria: "Software" });
   const habFrontend = await Habilidad.create({ nombre: "Frontend", categoria: "Web" });
   const habIngles = await Habilidad.create({ nombre: "Inglés", categoria: "Idiomas" });
@@ -27,38 +34,48 @@ async function seedDatabase() {
   const habDotNet = await Habilidad.create({ nombre: ".NET", categoria: "Software" });
   const habCiberseguridad = await Habilidad.create({ nombre: "Ciberseguridad", categoria: "Seguridad" });
 
-  console.log("✅ 7 Habilidades oficiales creadas (Backend, Frontend, Inglés, Cloud, Liderazgo, .NET, Ciberseguridad).");
+  console.log("✅ 7 Habilidades oficiales creadas.");
 
-  // 2. ÚNICO ESTUDIO: Tecnólogo en Informática
+  // 2. Único Estudio
   const estTecnologo = await Estudio.create({ nombre: "Tecnólogo en Informática", tier: 1 });
 
-  console.log("✅ Estudio 'Tecnólogo en Informática' creado.");
-
-  // 3. Crear Empresas por Tiers Diferenciados
+  // 3. Empresas por Tiers
   const empCarniceria = await Empresa.create({ nombre: "Carnicería del Tío Don Tito", tier: 1, tamanio: "Pyme Local", tipo: "Comercio" });
   const empStartup = await Empresa.create({ nombre: "Startup Tech Innovadora", tier: 2, tamanio: "Startup", tipo: "Tecnología" });
   const empGlobant = await Empresa.create({ nombre: "Globant Uruguay", tier: 3, tamanio: "Multinacional", tipo: "Consultoría IT" });
   const empMeLi = await Empresa.create({ nombre: "Mercado Libre", tier: 4, tamanio: "Enterprise", tipo: "E-Commerce / FinTech" });
   const empGoogle = await Empresa.create({ nombre: "Google Silicon Valley", tier: 5, tamanio: "Big Tech Global", tipo: "Big Tech" });
 
-  console.log("✅ 5 Empresas por Tiers creadas (Don Tito, Startup, Globant, Mercado Libre, Google).");
+  console.log("✅ Empresas por Tiers creadas.");
 
-  // 4. Crear Trabajos con Tiers y Requisitos Salariales Distintos
-  const jobCarniceria = await Trabajo.create({
-    nombre: "Ayudante de Software / Soporte",
-    puesto: "Ayudante de Software / Soporte",
+  // 4. Trabajos en Español (con áreas pertenecientes al enum de Mongoose)
+  const jobSoporte = await Trabajo.create({
+    nombre: "Ayudante de Soporte e Informática",
+    puesto: "Ayudante de Soporte e Informática",
     area: "Programacion",
     habilidad: habBackend._id,
     salarioBase: 10000,
     salarioAnual: 10000,
     edadMinima: 18,
-    descripcion: "Mantenimiento básico de computadoras y balanzas digitales en la carnicería del tío",
+    descripcion: "Mantenimiento básico de computadoras y equipos de oficina en la carnicería",
     empresa: empCarniceria._id
   });
 
-  const jobTrainee = await Trabajo.create({
-    nombre: "Pasante Trainee de Informática",
-    puesto: "Pasante Trainee de Informática",
+  const jobDevWebInicial = await Trabajo.create({
+    nombre: "Desarrollador Web Inicial",
+    puesto: "Desarrollador Web Inicial",
+    area: "Web",
+    habilidad: habFrontend._id,
+    salarioBase: 14000,
+    salarioAnual: 14000,
+    edadMinima: 18,
+    descripcion: "Creación de sitios web sencillos para comercios y pymes locales",
+    empresa: empCarniceria._id
+  });
+
+  const jobPasante = await Trabajo.create({
+    nombre: "Pasante de Programación",
+    puesto: "Pasante de Programación",
     area: "Programacion",
     habilidad: habBackend._id,
     salarioBase: 18000,
@@ -68,63 +85,101 @@ async function seedDatabase() {
     empresa: empStartup._id
   });
 
-  const jobJunior = await Trabajo.create({
-    nombre: "Junior Backend Developer",
-    puesto: "Junior Backend Developer",
+  const jobJuniorBackend = await Trabajo.create({
+    nombre: "Desarrollador Backend Junior",
+    puesto: "Desarrollador Backend Junior",
     area: "Programacion",
     habilidad: habBackend._id,
     salarioBase: 32000,
     salarioAnual: 32000,
     edadMinima: 19,
-    descripcion: "Desarrollador junior a cargo de servicios REST APIs en Node.js y .NET",
+    descripcion: "Desarrollo de servicios web y bases de datos en Node.js y .NET",
     empresa: empStartup._id
   });
 
-  const jobMid = await Trabajo.create({
-    nombre: "Mid FullStack Developer",
-    puesto: "Mid FullStack Developer",
+  const jobJuniorFrontend = await Trabajo.create({
+    nombre: "Desarrollador Frontend Junior",
+    puesto: "Desarrollador Frontend Junior",
+    area: "Web",
+    habilidad: habFrontend._id,
+    salarioBase: 30000,
+    salarioAnual: 30000,
+    edadMinima: 19,
+    descripcion: "Creación de pantallas e interfaces interactivas en React",
+    empresa: empStartup._id
+  });
+
+  const jobFullstack = await Trabajo.create({
+    nombre: "Desarrollador FullStack",
+    puesto: "Desarrollador FullStack",
     area: "Web",
     habilidad: habFrontend._id,
     salarioBase: 60000,
     salarioAnual: 60000,
-    edadMinima: 22,
-    descripcion: "Desarrollador semi-senior a cargo de aplicaciones web reactivas en Globant",
+    edadMinima: 21,
+    descripcion: "Desarrollo completo de aplicaciones frontend y backend en Globant",
     empresa: empGlobant._id
   });
 
-  const jobSenior = await Trabajo.create({
-    nombre: "Senior Cloud Architect & Security Lead",
-    puesto: "Senior Cloud Architect & Security Lead",
+  const jobInfra = await Trabajo.create({
+    nombre: "Especialista en Infraestructura y Nube",
+    puesto: "Especialista en Infraestructura y Nube",
     area: "Infraestructura",
     habilidad: habCloud._id,
-    salarioBase: 115000,
-    salarioAnual: 115000,
-    edadMinima: 26,
-    descripcion: "Arquitecto Senior responsable de la nube y seguridad en Mercado Libre",
+    salarioBase: 75000,
+    salarioAnual: 75000,
+    edadMinima: 23,
+    descripcion: "Gestión de servidores, redes y despliegues en la nube en Globant",
+    empresa: empGlobant._id
+  });
+
+  const jobLiderTecnico = await Trabajo.create({
+    nombre: "Líder Técnico de Software",
+    puesto: "Líder Técnico de Software",
+    area: "Programacion",
+    habilidad: habLiderazgo._id,
+    salarioBase: 110000,
+    salarioAnual: 110000,
+    edadMinima: 25,
+    descripcion: "Coordinación de equipos de programación y arquitectura en Mercado Libre",
     empresa: empMeLi._id
   });
 
-  const jobVP = await Trabajo.create({
-    nombre: "VP of Engineering & Big Tech Architect",
-    puesto: "VP of Engineering & Big Tech Architect",
+  const jobSeniorArch = await Trabajo.create({
+    nombre: "Arquitecto de Sistemas Senior",
+    puesto: "Arquitecto de Sistemas Senior",
     area: "Infraestructura",
+    habilidad: habCloud._id,
+    salarioBase: 140000,
+    salarioAnual: 140000,
+    edadMinima: 27,
+    descripcion: "Diseño de plataformas escalables y alta disponibilidad en Mercado Libre",
+    empresa: empMeLi._id
+  });
+
+  const jobDirectorTech = await Trabajo.create({
+    nombre: "Director de Ingeniería Tecnológica",
+    puesto: "Director de Ingeniería Tecnológica",
+    area: "Programacion",
     habilidad: habLiderazgo._id,
     salarioBase: 230000,
     salarioAnual: 230000,
-    edadMinima: 32,
-    descripcion: "Director ejecutivo responsable de la estrategia global de tecnología en Google",
+    edadMinima: 30,
+    descripcion: "Dirección ejecutiva de proyectos tecnológicos globales en Google",
     empresa: empGoogle._id
   });
 
-  console.log("✅ Trabajos por Tiers creados.");
+  console.log("✅ Trabajos creados.");
 
-  // 5. Crear Efectos de Habilidades (+1, +2, +3, -1, -2)
+  // 5. Efectos de Habilidades Positivos y Negativos
   const efBackend1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Backend", valor: 1 });
   const efBackend2 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Backend", valor: 2 });
   const efBackend3 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Backend", valor: 3 });
+  const efBackendMinus1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Backend", valor: -1 });
 
   const efFrontend1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Frontend", valor: 1 });
   const efFrontend2 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Frontend", valor: 2 });
+  const efFrontendMinus1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Frontend", valor: -1 });
 
   const efIngles1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Inglés", valor: 1 });
   const efIngles2 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Inglés", valor: 2 });
@@ -138,23 +193,23 @@ async function seedDatabase() {
 
   const efDotNet1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: ".NET", valor: 1 });
   const efDotNet2 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: ".NET", valor: 2 });
+  const efDotNetMinus1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: ".NET", valor: -1 });
 
   const efCiber1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Ciberseguridad", valor: 1 });
+  const efCiber2 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Ciberseguridad", valor: 2 });
   const efCiber3 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Ciberseguridad", valor: 3 });
 
-  const efBackendMinus1 = await Efecto.create({ tipo: "MODIFICAR_HABILIDAD", objetivo: "Backend", valor: -1 });
+  console.log("✅ Efectos creados.");
 
-  console.log("✅ Efectos de habilidades variados (+1, +2, +3) creados.");
+  // 6. TODOS LOS EVENTOS (VIEJOS Y NUEVOS) CON repetible: false
 
-  // 6. EVENTOS (Capacitaciones +2/+3, Proyectos de Riesgo, Ofertas Duales y Muerte Absurda)
-
-  // A. Eventos de Cursos y Bootcamps (+2 / +3)
+  // Capacitaciones
   const evBootcampCloud = await Evento.create({
     titulo: "Bootcamp Intensivo de Arquitectura Cloud & DevOps",
     tipo: "CAPACITACION",
     bonificacion: 5000,
     probabilidad: 0.8,
-    descripcion: "Completas un programa de inmersión total en AWS, Docker y Kubernetes de 300 horas.",
+    descripcion: "Completas un programa de inmersión total en servidores e infraestructura en la nube.",
     edadMinima: 20,
     edadMaxima: 55,
     cd: 4,
@@ -164,11 +219,11 @@ async function seedDatabase() {
   });
 
   const evMasterclassCiber = await Evento.create({
-    titulo: "Especialización Avanzada en Ciberseguridad Zero-Trust",
+    titulo: "Especialización Avanzada en Ciberseguridad",
     tipo: "CAPACITACION",
     bonificacion: 6000,
     probabilidad: 0.8,
-    descripcion: "Rendiste con éxito el examen de certificación internacional en pentesting y auditoría de redes.",
+    descripcion: "Rendiste con éxito el examen de certificación internacional en auditoría de redes.",
     edadMinima: 22,
     edadMaxima: 60,
     cd: 4,
@@ -178,11 +233,11 @@ async function seedDatabase() {
   });
 
   const evCursoDotNet = await Evento.create({
-    titulo: "Curso de Aceleración .NET 8 & Microservicios",
+    titulo: "Curso de Aceleración .NET & Microservicios",
     tipo: "CAPACITACION",
     bonificacion: 4000,
     probabilidad: 0.8,
-    descripcion: "Certificación oficial de Microsoft para desarrollo distribuido de alto rendimiento.",
+    descripcion: "Capacitación en desarrollo distribuido de alto rendimiento.",
     edadMinima: 20,
     edadMaxima: 55,
     cd: 4,
@@ -191,13 +246,55 @@ async function seedDatabase() {
     reqEstudio: false
   });
 
-  // B. Eventos de Proyectos a Ciegas / Riesgo
+  const evBootcampBackend = await Evento.create({
+    titulo: "Curso de Aceleración Backend & Arquitectura",
+    tipo: "CAPACITACION",
+    bonificacion: 4000,
+    probabilidad: 0.8,
+    descripcion: "Aprobaste un curso intensivo de diseño de servicios web y bases de datos.",
+    edadMinima: 18,
+    edadMaxima: 55,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evBootcampFrontend = await Evento.create({
+    titulo: "Masterclass de Desarrollo Frontend React",
+    tipo: "CAPACITACION",
+    bonificacion: 3500,
+    probabilidad: 0.8,
+    descripcion: "Completaste una capacitación práctica en desarrollo de pantallas e interfaces.",
+    edadMinima: 18,
+    edadMaxima: 55,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evCapacitacionIngles = await Evento.create({
+    titulo: "Inmersión Intensiva en Inglés Técnico",
+    tipo: "CAPACITACION",
+    bonificacion: 3000,
+    probabilidad: 0.8,
+    descripcion: "Practicaste conversación e inglés de negocios para clientes del exterior.",
+    edadMinima: 18,
+    edadMaxima: 60,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  // Emprendimientos y Riesgo
   const evStartupRiesgo = await Evento.create({
-    titulo: "Emprendimiento Nocturno: Lanzar Startup de IA Generativa",
+    titulo: "Emprendimiento Nocturno: Lanzar Startup de IA",
     tipo: "EMPRENDIMIENTO",
     bonificacion: 35000,
     probabilidad: 0.7,
-    descripcion: "Decides crear con unos amigos una plataforma de IA. Puedes arriesgar tu capital o liberarla como open source.",
+    descripcion: "Decides crear con unos amigos una plataforma de IA. Puedes arriesgar tu capital o liberarla gratis.",
     edadMinima: 21,
     edadMaxima: 55,
     cd: 4,
@@ -211,7 +308,7 @@ async function seedDatabase() {
     tipo: "INVERSION",
     bonificacion: 25000,
     probabilidad: 0.6,
-    descripcion: "Programaste un algoritmo cuantitativo para arbitraje financiero. Es momento de poner dinero real a prueba.",
+    descripcion: "Programaste un algoritmo cuantitativo. Es momento de probar si genera ganancias o pérdidas.",
     edadMinima: 22,
     edadMaxima: 50,
     cd: 4,
@@ -220,70 +317,13 @@ async function seedDatabase() {
     reqEstudio: false
   });
 
-  // C. Ofertas Laborales Duales (Aceptar vs Rechazar y Conservar Empleo)
-  const evOfferJunior = await Evento.create({
-    titulo: "Oferta Laboral: Junior Backend en Startup Tech",
-    tipo: "DESEMPLEO",
-    bonificacion: 32000,
-    probabilidad: 0.95,
-    descripcion: "Startup Tech Innovadora busca un desarrollador Junior para sumarse al equipo de APIs.",
-    edadMinima: 18,
-    edadMaxima: 45,
-    cd: 2,
-    repetible: true,
-    reqTrabajo: false,
-    reqEstudio: false
-  });
-
-  const evOfferMid = await Evento.create({
-    titulo: "Oferta Laboral: Mid FullStack Developer en Globant",
-    tipo: "DESEMPLEO",
-    bonificacion: 60000,
-    probabilidad: 0.95,
-    descripcion: "Globant Uruguay te ofrece un puesto Mid FullStack con clientes de EE.UU.",
-    edadMinima: 21,
-    edadMaxima: 60,
-    cd: 2,
-    repetible: true,
-    reqTrabajo: false,
-    reqEstudio: false
-  });
-
-  const evOfferSenior = await Evento.create({
-    titulo: "Oferta Laboral: Senior Cloud Architect en Mercado Libre",
-    tipo: "DESEMPLEO",
-    bonificacion: 115000,
-    probabilidad: 0.95,
-    descripcion: "Mercado Libre requiere un Arquitecto Senior para liderar la nube en América Latina.",
-    edadMinima: 25,
-    edadMaxima: 65,
-    cd: 2,
-    repetible: true,
-    reqTrabajo: false,
-    reqEstudio: false
-  });
-
-  const evOfferVP = await Evento.create({
-    titulo: "Oferta Ejecutiva: VP of Engineering en Google",
-    tipo: "DESEMPLEO",
-    bonificacion: 230000,
-    probabilidad: 0.95,
-    descripcion: "Google Silicon Valley busca un Director Ejecutivo de Ingeniería Global.",
-    edadMinima: 30,
-    edadMaxima: 65,
-    cd: 2,
-    repetible: true,
-    reqTrabajo: false,
-    reqEstudio: false
-  });
-
-  // D. Eventos de Gastos por Tonterías y Malas Decisiones Financieras
+  // Gastos
   const evGastoCamioneta = await Evento.create({
-    titulo: "Compra Impulsiva de Camioneta 0km 4x4 a 60 cuotas",
+    titulo: "Compra Impulsiva de Camioneta 4x4 a 60 cuotas",
     tipo: "GASTO",
     bonificacion: -25000,
     probabilidad: 0.6,
-    descripcion: "Te compraste una pickup gigante que no necesitabas para impresionar en la oficina. El crédito prendario devoró tus ahorros.",
+    descripcion: "Te compraste una pickup gigante que no necesitabas y devoró tus ahorros.",
     edadMinima: 20,
     edadMaxima: 60,
     cd: 4,
@@ -293,11 +333,11 @@ async function seedDatabase() {
   });
 
   const evGastoFreeFire = await Evento.create({
-    titulo: "Recarga Masiva de Diamantes en Free Fire y Skins Legendarias",
+    titulo: "Recarga Masiva de Diamantes y Skins",
     tipo: "GASTO",
     bonificacion: -8000,
     probabilidad: 0.7,
-    descripcion: "Te viciaste en el juego mobile y gastaste un dineral en pases de batalla, diamantes y cosméticos virtuales.",
+    descripcion: "Te viciaste en juegos móviles y gastaste un dineral en pases de batalla.",
     edadMinima: 18,
     edadMaxima: 45,
     cd: 3,
@@ -307,11 +347,11 @@ async function seedDatabase() {
   });
 
   const evGastoAnime = await Evento.create({
-    titulo: "Fiebre de Coleccionables de Anime y Teclados Custom",
+    titulo: "Fiebre de Coleccionables y Teclados Custom",
     tipo: "GASTO",
     bonificacion: -12000,
     probabilidad: 0.6,
-    descripcion: "Importaste estatuas de colección a escala y armaste tres teclados mecánicos personalizados de aluminio.",
+    descripcion: "Importaste estatuas a escala y armaste tres teclados mecánicos de aluminio.",
     edadMinima: 18,
     edadMaxima: 50,
     cd: 4,
@@ -320,28 +360,69 @@ async function seedDatabase() {
     reqEstudio: false
   });
 
-  // E. Evento Cómico de Fallo de Entrevista por Counter-Strike
   const evCS2Fail = await Evento.create({
-    titulo: "🎮 ¡Te quedaste jugando al Counter-Strike y perdiste la entrevista!",
+    titulo: "Te quedaste jugando toda la noche y perdiste la entrevista",
     tipo: "DESPIDO",
     bonificacion: 0,
     probabilidad: 0.5,
-    descripcion: "Trasnoches en un clutch 1v4 competitivo de CS2 hasta las 6 AM. Te dormiste profundamente, faltaste a la entrevista y perdiste la oportunidad laboral.",
+    descripcion: "Trasnoches en partidas competitivas, te dormiste y faltaste a la entrevista.",
     edadMinima: 18,
     edadMaxima: 50,
     cd: 4,
-    repetible: true,
+    repetible: false,
     reqTrabajo: false,
     reqEstudio: false
   });
 
-  // F. Eventos de Muerte Absurda (Probabilidad estricta < 5%, 2%)
-  const evMuerteEnergizantes = await Evento.create({
-    titulo: "💀 ¡Sobredosis de 12 Energizantes en un Deploy Nocturno!",
+  // IA, Caída de Bolsa, Muerte, Lesiones y Familia
+  const evIAReemplazo = await Evento.create({
+    titulo: "Una Inteligencia Artificial reemplazó tu puesto",
+    tipo: "DESPIDO",
+    bonificacion: 0,
+    probabilidad: 0.15,
+    descripcion: "La empresa implementó agentes de IA que escriben código. Tu puesto fue recortado y quedaste desempleado.",
+    edadMinima: 20,
+    edadMaxima: 62,
+    cd: 5,
+    repetible: false,
+    reqTrabajo: true,
+    reqEstudio: false
+  });
+
+  const evColapsoBolsa = await Evento.create({
+    titulo: "Colapso de la Bolsa de Valores y Mercado Cripto",
+    tipo: "CATASTROFE",
+    bonificacion: 0,
+    probabilidad: 0.10,
+    descripcion: "Una crisis económica internacional provocó una caída masiva. Perdiste el 50% de tu dinero acumulado.",
+    edadMinima: 21,
+    edadMaxima: 64,
+    cd: 6,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evMuertePala = await Evento.create({
+    titulo: "Viste una pala y del susto te moriste",
     tipo: "MUERTE",
     bonificacion: 0,
-    probabilidad: 0.02,
-    descripcion: "Intentaste aguantar 48 horas despierto tomando latas de energizante en el deploy de producción. Tu corazón no resistió.",
+    probabilidad: 0.18,
+    descripcion: "Caminando cerca de una obra divisaste una pala manual. El terror a agarrar la pala y ponerte a trabajar te causó un paro cardíaco.",
+    edadMinima: 18,
+    edadMaxima: 64,
+    cd: 10,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evMuerteEnergizantes = await Evento.create({
+    titulo: "Sobredosis de 12 Energizantes en un Deploy Nocturno",
+    tipo: "MUERTE",
+    bonificacion: 0,
+    probabilidad: 0.15,
+    descripcion: "Intentaste aguantar 48 horas despierto tomando latas de energizante en producción. Tu corazón colapsó.",
     edadMinima: 19,
     edadMaxima: 64,
     cd: 10,
@@ -351,11 +432,11 @@ async function seedDatabase() {
   });
 
   const evMuerteRayo = await Evento.create({
-    titulo: "⚡ ¡Rayo Cómico por la Ventana en un Refactor!",
+    titulo: "Impacto de Rayo por la Ventana en un Refactor",
     tipo: "MUERTE",
     bonificacion: 0,
-    probabilidad: 0.02,
-    descripcion: "Un rayo cayó sobre el transformador del edificio y la descarga atravesó tu teclado mecánico de aluminio.",
+    probabilidad: 0.15,
+    descripcion: "Un rayo cayó en el transformador del edificio y la descarga atravesó tu teclado de aluminio.",
     edadMinima: 18,
     edadMaxima: 64,
     cd: 10,
@@ -364,161 +445,516 @@ async function seedDatabase() {
     reqEstudio: false
   });
 
-  console.log("✅ Eventos creados (Bootcamps, Riesgo, Ofertas Duales y Muerte Absurda).");
+  const evLesionDedos = await Evento.create({
+    titulo: "Lesión grave en las manos jugando básquetbol",
+    tipo: "ENFERMEDAD",
+    bonificacion: -2000,
+    probabilidad: 0.20,
+    descripcion: "Te esguinzaste las manos en un partido de fin de semana y perdiste velocidad para codear.",
+    edadMinima: 18,
+    edadMaxima: 50,
+    cd: 4,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
 
-  // 7. Crear Opciones para Eventos
+  const evVacaciones = await Evento.create({
+    titulo: "Vacaciones o Burnout en el Proyecto",
+    tipo: "EVENTO_RANDOM",
+    bonificacion: 0,
+    probabilidad: 0.6,
+    descripcion: "Llevas meses trabajando a ritmo acelerado. Tu cuerpo te pide descansar antes de colapsar.",
+    edadMinima: 20,
+    edadMaxima: 60,
+    cd: 4,
+    repetible: false,
+    reqTrabajo: true,
+    reqEstudio: false
+  });
 
-  // Opciones Cursos (+2 / +3)
-  const opBootcampCloud_A = await Opcion.create({
+  const evCasamiento = await Evento.create({
+    titulo: "Propuesta de Matrimonio y Vida Familiar",
+    tipo: "EVENTO_FAMILIAR",
+    bonificacion: 0,
+    probabilidad: 0.5,
+    descripcion: "Tu pareja te propone casarse y organizar la fiesta de boda.",
+    edadMinima: 23,
+    edadMaxima: 45,
+    cd: 8,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evHijo = await Evento.create({
+    titulo: "Nacimiento de tu Primer Hijo",
+    tipo: "GASTO",
+    bonificacion: -15000,
+    probabilidad: 0.5,
+    descripcion: "Llegó la noticia del nacimiento de tu hijo. Hay que equipar el hogar con cuna y pañales.",
+    edadMinima: 24,
+    edadMaxima: 48,
+    cd: 8,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evDivorcio = await Evento.create({
+    titulo: "Trámite de Divorcio y División de Bienes",
+    tipo: "CATASTROFE",
+    bonificacion: 0,
+    probabilidad: 0.35,
+    descripcion: "Diferencias irreconciliables llevaron a iniciar el divorcio legal y dividir el patrimonio acumulado.",
+    edadMinima: 28,
+    edadMaxima: 60,
+    cd: 8,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evPrincipeNigeriano = await Evento.create({
+    titulo: "Correo electrónico del Príncipe Nigeriano",
+    tipo: "GASTO",
+    bonificacion: -5000,
+    probabilidad: 0.4,
+    descripcion: "Recibiste un correo prometiéndote millones a cambio de una transferencia inicial.",
+    edadMinima: 18,
+    edadMaxima: 60,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evPendriveCalle = await Evento.create({
+    titulo: "Pendrive tirado en la vereda de la oficina",
+    tipo: "EVENTO_RANDOM",
+    bonificacion: 0,
+    probabilidad: 0.4,
+    descripcion: "Encontraste una memoria USB tirada en la vereda. La curiosidad te tienta a conectarlo.",
+    edadMinima: 18,
+    edadMaxima: 55,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evSudoRmRf = await Evento.create({
+    titulo: "Comando destructivo ejecutado en producción",
+    tipo: "EVENTO_RANDOM",
+    bonificacion: 5000,
+    probabilidad: 0.35,
+    descripcion: "Por un error humano se borraron bases de datos principales en el servidor.",
+    edadMinima: 20,
+    edadMaxima: 60,
+    cd: 4,
+    repetible: false,
+    reqTrabajo: true,
+    reqEstudio: false
+  });
+
+  const evHackatonCafe = await Evento.create({
+    titulo: "Hackatón de Fin de Semana a Puro Café",
+    tipo: "RECOMPENSA",
+    bonificacion: 10000,
+    probabilidad: 0.5,
+    descripcion: "Competiste durante 48 horas continuas en una hackatón creando un prototipo funcional.",
+    edadMinima: 18,
+    edadMaxima: 45,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evCursoUdemy = await Evento.create({
+    titulo: "Compraste 10 cursos en descuento y jamás los abriste",
+    tipo: "GASTO",
+    bonificacion: -3500,
+    probabilidad: 0.6,
+    descripcion: "Aprovechaste una liquidación de cursos virtuales y nunca completaste ni un video.",
+    edadMinima: 18,
+    edadMaxima: 50,
+    cd: 3,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  // Ofertas Laborales Duales en Español
+  const evOfertaDevWeb = await Evento.create({
+    titulo: "Oferta Laboral: Desarrollador Web Inicial",
+    tipo: "DESEMPLEO",
+    bonificacion: 14000,
+    probabilidad: 0.95,
+    descripcion: "Carnicería Don Tito busca un programador web para mantener su catálogo virtual.",
+    edadMinima: 20,
+    edadMaxima: 40,
+    cd: 2,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evOfertaBackendJr = await Evento.create({
+    titulo: "Oferta Laboral: Desarrollador Backend Junior",
+    tipo: "DESEMPLEO",
+    bonificacion: 32000,
+    probabilidad: 0.95,
+    descripcion: "Startup Tech Innovadora busca un programador junior para sumarse al equipo de servicios web.",
+    edadMinima: 20,
+    edadMaxima: 45,
+    cd: 2,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evOfertaFullstack = await Evento.create({
+    titulo: "Oferta Laboral: Desarrollador FullStack en Globant",
+    tipo: "DESEMPLEO",
+    bonificacion: 60000,
+    probabilidad: 0.95,
+    descripcion: "Globant Uruguay te ofrece un puesto FullStack para proyectos internacionales.",
+    edadMinima: 21,
+    edadMaxima: 55,
+    cd: 2,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evOfertaLider = await Evento.create({
+    titulo: "Oferta Laboral: Líder Técnico en Mercado Libre",
+    tipo: "DESEMPLEO",
+    bonificacion: 110000,
+    probabilidad: 0.95,
+    descripcion: "Mercado Libre busca un Líder Técnico para coordinar equipos de programación.",
+    edadMinima: 25,
+    edadMaxima: 65,
+    cd: 2,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  const evOfertaDirector = await Evento.create({
+    titulo: "Oferta Ejecutiva: Director de Ingeniería en Google",
+    tipo: "DESEMPLEO",
+    bonificacion: 230000,
+    probabilidad: 0.95,
+    descripcion: "Google Silicon Valley busca un Director para liderar la estrategia tecnológica global.",
+    edadMinima: 30,
+    edadMaxima: 65,
+    cd: 2,
+    repetible: false,
+    reqTrabajo: false,
+    reqEstudio: false
+  });
+
+  console.log("✅ Todos los eventos creados (repetible: false).");
+
+  // 7. Opciones de Eventos (Puros textos sin parentesis de efectos)
+
+  // Capacitaciones
+  const opBootCloud_A = await Opcion.create({
     evento: evBootcampCloud._id,
-    titulo: "Realizar el Bootcamp Intensivo completo",
-    texto: "Aprobar el programa de certificación internacional (+3 Cloud y Infraestructura)"
+    titulo: "Realizar el Bootcamp completo",
+    texto: "Aprobar el programa de certificación en infraestructura en la nube"
   });
 
-  const opMasterCiber_A = await Opcion.create({
+  const opCiber_A = await Opcion.create({
     evento: evMasterclassCiber._id,
-    titulo: "Rendir el examen de certificación Zero-Trust",
-    texto: "Certificarse como auditor de seguridad avanzado (+3 Ciberseguridad)"
+    titulo: "Rendir el examen de auditoría",
+    texto: "Certificarse como auditor de seguridad avanzado"
   });
 
-  const opCursoDotNet_A = await Opcion.create({
+  const opDotNet_A = await Opcion.create({
     evento: evCursoDotNet._id,
-    titulo: "Completar la capacitación de Microsoft",
-    texto: "Aprobar los módulos de microservicios (+2 .NET)"
+    titulo: "Completar la capacitación",
+    texto: "Aprobar los módulos de microservicios distribuídos"
   });
 
-  // Opciones Proyectos de Riesgo (A ciegas)
+  const opBackend_A = await Opcion.create({
+    evento: evBootcampBackend._id,
+    titulo: "Completar el curso de Backend",
+    texto: "Aprobar los módulos de servicios web y bases de datos"
+  });
+
+  const opFrontend_A = await Opcion.create({
+    evento: evBootcampFrontend._id,
+    titulo: "Realizar el taller de Frontend",
+    texto: "Crear proyectos prácticos en React"
+  });
+
+  const opIngles_A = await Opcion.create({
+    evento: evCapacitacionIngles._id,
+    titulo: "Asistir a las clases de conversación",
+    texto: "Mejorar la fluidez en reuniones técnicas"
+  });
+
+  const opCiberTall_A = await Opcion.create({
+    evento: evMasterclassCiber._id,
+    titulo: "Aprobar el taller de ciberseguridad",
+    texto: "Completar las prácticas de detección de vulnerabilidades"
+  });
+
+  // Emprendimientos
   const opStartup_A = await Opcion.create({
     evento: evStartupRiesgo._id,
-    titulo: "Invertir $15,000 de ahorros en servidores de IA GPU",
-    texto: "Arriesgar capital en infraestructura propia (Resultado con alto beneficio o pérdida)"
+    titulo: "Invertir ahorros en infraestructura propia",
+    texto: "Arriesgar capital propio comprando servidores de IA"
   });
   const opStartup_B = await Opcion.create({
     evento: evStartupRiesgo._id,
-    titulo: "Publicar el proyecto como Open Source gratuito",
-    texto: "Ganar reputación en la comunidad sin arriesgar dinero (+2 Backend, +1 Frontend)"
+    titulo: "Publicar el proyecto como código abierto",
+    texto: "Liberar el proyecto sin arriesgar dinero"
   });
 
   const opTrading_A = await Opcion.create({
     evento: evBotTrading._id,
-    titulo: "Conectar el bot a tu cuenta con capital real",
-    texto: "Poner a operar el algoritmo cuant en el mercado (Riesgo alto de ganancia o pérdida)"
+    titulo: "Conectar el bot con capital real",
+    texto: "Poner a operar el algoritmo cuantitativo en el mercado"
   });
 
-  // Opciones Ofertas Laborales Duales (Aceptar vs Rechazar y Conservar Puesto)
-  const opOfferJunior_A = await Opcion.create({
-    evento: evOfferJunior._id,
-    trabajo: jobJunior._id,
-    titulo: "Aceptar oferta en Startup Tech Innovadora",
-    texto: "Firmar contrato laboral ($32,000 / año, +1 Backend)"
-  });
-  const opOfferJunior_B = await Opcion.create({
-    evento: evOfferJunior._id,
-    titulo: "Rechazar oferta y conservar empleo actual",
-    texto: "Permanecer en la empresa actual para sumar antigüedad y experiencia (+1 Liderazgo)"
-  });
-
-  const opOfferMid_A = await Opcion.create({
-    evento: evOfferMid._id,
-    trabajo: jobMid._id,
-    titulo: "Aceptar oferta en Globant Uruguay",
-    texto: "Firmar contrato en Globant ($60,000 / año, +1 Frontend)"
-  });
-  const opOfferMid_B = await Opcion.create({
-    evento: evOfferMid._id,
-    titulo: "Rechazar la propuesta y mantener estabilidad laboral",
-    texto: "Conservar tu puesto actual apostando al crecimiento interno (+1 Liderazgo)"
-  });
-
-  const opOfferSenior_A = await Opcion.create({
-    evento: evOfferSenior._id,
-    trabajo: jobSenior._id,
-    titulo: "Aceptar la posición Senior en Mercado Libre",
-    texto: "Firmar contrato ejecutivo ($115,000 / año, +2 Cloud)"
-  });
-  const opOfferSenior_B = await Opcion.create({
-    evento: evOfferSenior._id,
-    titulo: "Rechazar el pase y quedarte en tu empresa actual",
-    texto: "Demostrar lealtad profesional e impulsar tu liderazgo interno (+1 Liderazgo)"
-  });
-
-  const opOfferVP_A = await Opcion.create({
-    evento: evOfferVP._id,
-    trabajo: jobVP._id,
-    titulo: "Aceptar la dirección técnica en Google Silicon Valley",
-    texto: "Firmar contrato global en Google ($230,000 / año, +2 Liderazgo)"
-  });
-  const opOfferVP_B = await Opcion.create({
-    evento: evOfferVP._id,
-    titulo: "Rechazar a Google y seguir tu propio camino",
-    texto: "Mantener tu independencia y estabilidad laboral actual (+1 Liderazgo)"
-  });
-
-  // Opciones Gastos por Tonterías
-  const opGastoCamioneta_A = await Opcion.create({
+  // Gastos
+  const opCamioneta_A = await Opcion.create({
     evento: evGastoCamioneta._id,
-    titulo: "Firmar la compra de la 4x4 a 60 cuotas",
-    texto: "Pagar el pie y asumir la deuda mensual (- $25,000 en ahorros)"
+    titulo: "Firmar la compra de la 4x4 ($25,000)",
+    texto: "Pagar la cuota inicial y asumir la deuda prendaria ($25,000)"
   });
 
-  const opGastoFreeFire_A = await Opcion.create({
+  const opFreeFire_A = await Opcion.create({
     evento: evGastoFreeFire._id,
-    titulo: "Comprar pases de batalla y diamantes",
-    texto: "Gastar ahorros en pases de batalla y pases de skins (- $8,000 en ahorros)"
+    titulo: "Comprar pases de batalla y diamantes ($8,000)",
+    texto: "Gastar ahorros en pases de batalla y cosméticos ($8,000)"
   });
 
-  const opGastoAnime_A = await Opcion.create({
+  const opAnime_A = await Opcion.create({
     evento: evGastoAnime._id,
-    titulo: "Importar coleccionables y teclados custom",
-    texto: "Pagar costos de envío internacional (- $12,000 en ahorros)"
+    titulo: "Importar coleccionables y teclados custom ($12,000)",
+    texto: "Pagar costos de envío internacional ($12,000)"
   });
 
-  // Opción Fallo Entrevista CS2
-  const opCS2Fail_A = await Opcion.create({
+  const opCS2_A = await Opcion.create({
     evento: evCS2Fail._id,
-    titulo: "Asumir la derrota y el trasnocho",
-    texto: "Perder la oportunidad laboral por desvelarte en la clasificatoria de CS2 (Quedar Desempleado)"
+    titulo: "Asumir el desvelo y la falta",
+    texto: "Aceptar las consecuencias de desvelarte en la clasificatoria"
   });
 
-  // Opciones Muerte Absurda (Opción única obligatoria)
-  const opMuerteEnergizantes_A = await Opcion.create({
+  // IA y Colapso
+  const opIA_A = await Opcion.create({
+    evento: evIAReemplazo._id,
+    titulo: "Aceptar la desvinculación laboral",
+    texto: "Firmar la salida de la empresa y quedar en búsqueda laboral"
+  });
+
+  const opBolsa_A = await Opcion.create({
+    evento: evColapsoBolsa._id,
+    titulo: "Asumir las pérdidas de la crisis financiera",
+    texto: "Aceptar la caída del patrimonio generado"
+  });
+
+  const opPala_A = await Opcion.create({
+    evento: evMuertePala._id,
+    titulo: "Sucumbir ante el pavor de la pala",
+    texto: "El pavor irracional a agarrar la pala y ponerte a trabajar concluyó tu simulación laboral"
+  });
+
+  const opEnergizantes_A = await Opcion.create({
     evento: evMuerteEnergizantes._id,
-    titulo: "Aceptar el desenlace trágico",
-    texto: "Tu carrera tecnológica termina abruptamente por el colapso del deploy."
+    titulo: "Aceptar el desenlace del deploy",
+    texto: "Tu carrera concluye por el esfuerzo extremo del trasnocho"
   });
 
-  const opMuerteRayo_A = await Opcion.create({
+  const opRayo_A = await Opcion.create({
     evento: evMuerteRayo._id,
     titulo: "Fin de la simulación por fuerza mayor",
-    texto: "Un impacto electromagnético inaudito concluyó tu viaje laboral."
+    texto: "Un impacto electromagnético concluyó tu viaje laboral"
   });
 
-  console.log("✅ Opciones creadas.");
+  const opLesion_A = await Opcion.create({
+    evento: evLesionDedos._id,
+    titulo: "Reposar y realizar rehabilitación médica ($2,000)",
+    texto: "Hacer terapia física en las manos ($2,000)"
+  });
+
+  // Vacaciones y Familia
+  const opVacaciones_A = await Opcion.create({
+    evento: evVacaciones._id,
+    titulo: "Irte de vacaciones 2 semanas a la playa",
+    texto: "Viajar a la costa para descansar y despejar la mente"
+  });
+  const opVacaciones_B = await Opcion.create({
+    evento: evVacaciones._id,
+    titulo: "Rechazar las vacaciones y seguir trabajando sin parar",
+    texto: "Quedarte trabajando sin descanso"
+  });
+
+  const opCasamiento_A = await Opcion.create({
+    evento: evCasamiento._id,
+    titulo: "Casarte y celebrar la boda",
+    texto: "Financiar la boda y asumir compromisos familiares"
+  });
+  const opCasamiento_B = await Opcion.create({
+    evento: evCasamiento._id,
+    titulo: "Decidir no casarte por ahora",
+    texto: "Priorizar tu independencia y proyectos personales"
+  });
+
+  const opHijo_A = await Opcion.create({
+    evento: evHijo._id,
+    titulo: "Dar la bienvenida a tu primer hijo ($15,000)",
+    texto: "Preparar el hogar para la llegada del bebé ($15,000)"
+  });
+
+  const opDivorcio_A = await Opcion.create({
+    evento: evDivorcio._id,
+    titulo: "Firmar el acuerdo de divorcio",
+    texto: "Dividir el patrimonio acumulado"
+  });
+
+  const opPrincipe_A = await Opcion.create({
+    evento: evPrincipeNigeriano._id,
+    titulo: "Transferir dinero para liberar la herencia ($5,000)",
+    texto: "Enviar el dinero con la esperanza de recibir millones ($5,000)"
+  });
+  const opPrincipe_B = await Opcion.create({
+    evento: evPrincipeNigeriano._id,
+    titulo: "Marcar el correo como Spam e ignorarlo",
+    texto: "Evitar la estafa e ignorar el mensaje"
+  });
+
+  const opPendrive_A = await Opcion.create({
+    evento: evPendriveCalle._id,
+    titulo: "Conectarlo a la computadora del trabajo",
+    texto: "Probar el pendrive por curiosidad"
+  });
+  const opPendrive_B = await Opcion.create({
+    evento: evPendriveCalle._id,
+    titulo: "Entregarlo al equipo de seguridad informática",
+    texto: "Seguir el protocolo oficial de seguridad"
+  });
+
+  const opSudo_A = await Opcion.create({
+    evento: evSudoRmRf._id,
+    titulo: "Trabajar 72 horas seguidas restaurando copias de respaldo",
+    texto: "Recuperar la base de datos de producción"
+  });
+
+  const opHackaton_A = await Opcion.create({
+    evento: evHackatonCafe._id,
+    titulo: "Presentar el prototipo ante el jurado",
+    texto: "Competir en la presentación final"
+  });
+
+  const opUdemy_A = await Opcion.create({
+    evento: evCursoUdemy._id,
+    titulo: "Asumir la compra impulsiva de cursos ($3,500)",
+    texto: "Registrar el gasto en tu saldo sin haber estudiado nada ($3,500)"
+  });
+
+  // Ofertas Laborales Duales
+  const opOfertaDevWeb_A = await Opcion.create({
+    evento: evOfertaDevWeb._id,
+    trabajo: jobDevWebInicial._id,
+    titulo: "Aceptar trabajo en Carnicería Don Tito ($14,000 / año)",
+    texto: "Firmar contrato laboral como Desarrollador Web Inicial ($14,000 / año)"
+  });
+  const opOfertaDevWeb_B = await Opcion.create({
+    evento: evOfertaDevWeb._id,
+    titulo: "Rechazar oferta laboral",
+    texto: "Rechazar la propuesta y mantenerse desempleado"
+  });
+
+  const opOfertaBackendJr_A = await Opcion.create({
+    evento: evOfertaBackendJr._id,
+    trabajo: jobJuniorBackend._id,
+    titulo: "Aceptar puesto en Startup Tech Innovadora ($32,000 / año)",
+    texto: "Firmar contrato como Desarrollador Backend Junior ($32,000 / año)"
+  });
+  const opOfertaBackendJr_B = await Opcion.create({
+    evento: evOfertaBackendJr._id,
+    titulo: "Rechazar propuesta de la Startup",
+    texto: "Rechazar oferta para buscar otras opciones"
+  });
+
+  const opOfertaFullstack_A = await Opcion.create({
+    evento: evOfertaFullstack._id,
+    trabajo: jobFullstack._id,
+    titulo: "Aceptar puesto en Globant Uruguay ($60,000 / año)",
+    texto: "Firmar contrato como Desarrollador FullStack ($60,000 / año)"
+  });
+  const opOfertaFullstack_B = await Opcion.create({
+    evento: evOfertaFullstack._id,
+    titulo: "Rechazar la propuesta de Globant",
+    texto: "Rechazar el cambio para conservar estabilidad"
+  });
+
+  const opOfertaLider_A = await Opcion.create({
+    evento: evOfertaLider._id,
+    trabajo: jobLiderTecnico._id,
+    titulo: "Aceptar puesto en Mercado Libre ($110,000 / año)",
+    texto: "Firmar contrato como Líder Técnico de Software ($110,000 / año)"
+  });
+  const opOfertaLider_B = await Opcion.create({
+    evento: evOfertaLider._id,
+    titulo: "Rechazar la propuesta de Mercado Libre",
+    texto: "Rechazar la oferta y continuar en tu posición actual"
+  });
+
+  const opOfertaDirector_A = await Opcion.create({
+    evento: evOfertaDirector._id,
+    trabajo: jobDirectorTech._id,
+    titulo: "Aceptar la dirección técnica en Google ($230,000 / año)",
+    texto: "Firmar contrato ejecutivo como Director de Ingeniería ($230,000 / año)"
+  });
+  const opOfertaDirector_B = await Opcion.create({
+    evento: evOfertaDirector._id,
+    titulo: "Rechazar a Google",
+    texto: "Rechazar la propuesta ejecutiva y seguir tu propio camino"
+  });
+
+  console.log("✅ Opciones sin efectos entre paréntesis creadas.");
 
   // 8. Vincular Efectos a Opciones (EfectoOpcion)
-  await EfectoOpcion.create({ efecto: efCloud3._id, opcion: opBootcampCloud_A._id });
-  await EfectoOpcion.create({ efecto: efCiber3._id, opcion: opMasterCiber_A._id });
-  await EfectoOpcion.create({ efecto: efDotNet2._id, opcion: opCursoDotNet_A._id });
+  await EfectoOpcion.create({ efecto: efCloud3._id, opcion: opBootCloud_A._id });
+  await EfectoOpcion.create({ efecto: efCiber3._id, opcion: opCiber_A._id });
+  await EfectoOpcion.create({ efecto: efDotNet2._id, opcion: opDotNet_A._id });
+
+  await EfectoOpcion.create({ efecto: efBackend2._id, opcion: opBackend_A._id });
+  await EfectoOpcion.create({ efecto: efCloud1._id, opcion: opBackend_A._id });
+  await EfectoOpcion.create({ efecto: efFrontend2._id, opcion: opFrontend_A._id });
+  await EfectoOpcion.create({ efecto: efIngles2._id, opcion: opIngles_A._id });
+  await EfectoOpcion.create({ efecto: efCiber2._id, opcion: opCiberTall_A._id });
 
   await EfectoOpcion.create({ efecto: efBackend2._id, opcion: opStartup_A._id });
   await EfectoOpcion.create({ efecto: efBackend2._id, opcion: opStartup_B._id });
   await EfectoOpcion.create({ efecto: efFrontend1._id, opcion: opStartup_B._id });
 
-  await EfectoOpcion.create({ efecto: efBackend1._id, opcion: opOfferJunior_A._id });
-  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opOfferJunior_B._id });
+  await EfectoOpcion.create({ efecto: efBackendMinus1._id, opcion: opLesion_A._id });
+  await EfectoOpcion.create({ efecto: efFrontendMinus1._id, opcion: opLesion_A._id });
+  await EfectoOpcion.create({ efecto: efDotNetMinus1._id, opcion: opLesion_A._id });
 
-  await EfectoOpcion.create({ efecto: efFrontend1._id, opcion: opOfferMid_A._id });
-  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opOfferMid_B._id });
+  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opVacaciones_A._id });
+  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opPrincipe_B._id });
+  await EfectoOpcion.create({ efecto: efBackendMinus1._id, opcion: opPendrive_A._id });
+  await EfectoOpcion.create({ efecto: efCiber1._id, opcion: opPendrive_B._id });
+  await EfectoOpcion.create({ efecto: efCloud2._id, opcion: opSudo_A._id });
+  await EfectoOpcion.create({ efecto: efBackend1._id, opcion: opSudo_A._id });
+  await EfectoOpcion.create({ efecto: efFrontend2._id, opcion: opHackaton_A._id });
 
-  await EfectoOpcion.create({ efecto: efCloud2._id, opcion: opOfferSenior_A._id });
-  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opOfferSenior_B._id });
+  await EfectoOpcion.create({ efecto: efFrontend1._id, opcion: opOfertaDevWeb_A._id });
+  await EfectoOpcion.create({ efecto: efBackend1._id, opcion: opOfertaBackendJr_A._id });
+  await EfectoOpcion.create({ efecto: efFrontend1._id, opcion: opOfertaFullstack_A._id });
+  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opOfertaLider_A._id });
+  await EfectoOpcion.create({ efecto: efLiderazgo2._id, opcion: opOfertaDirector_A._id });
 
-  await EfectoOpcion.create({ efecto: efLiderazgo2._id, opcion: opOfferVP_A._id });
-  await EfectoOpcion.create({ efecto: efLiderazgo1._id, opcion: opOfferVP_B._id });
-
-  console.log("✅ Relaciones EfectoOpcion vinculadas.");
-
-  console.log("🏆 Seeding completado con habilidades, estudios, empresas, trabajos y eventos.");
+  console.log("🏆 Seeding de todos los eventos (viejos + nuevos) completado con éxito con repetible: false.");
   process.exit(0);
 }
 

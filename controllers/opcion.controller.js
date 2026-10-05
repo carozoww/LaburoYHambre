@@ -64,20 +64,33 @@ export async function tomarOpcion(req, res, next) {
       opcion = await opcionService.getOpcionPorId(opcionId);
     }
 
-    // A. Si el evento es de MUERTE ABSURDA
+    // si el evento es de MUERTE ABSURDA
     if (eventoObj && eventoObj.tipo === "MUERTE") {
-      runTrabajo.estado = "Completada";
+      runTrabajo.estado = "MUERTO";
+      runTrabajo.muerto = true;
       runTrabajo.empleado = false;
       runTrabajo.salarioActual = 0;
     }
-    // B. Si el evento o la opción provocan despido (lay-off)
-    else if (eventoObj && (eventoObj.tipo === "DESPIDO" || (opcion && opcion.texto && opcion.texto.toLowerCase().includes("desempleado")))) {
-      runTrabajo.empleado = false;
-      runTrabajo.trabajo = null;
-      runTrabajo.salarioActual = 0;
-      runTrabajo.anosEnTrabajoActual = 0;
+    // si el evento o la opción provocan despido
+    else if (
+      eventoObj && (
+        eventoObj.tipo === "DESPIDO" ||
+        (opcion && opcion.texto && /mantenerse desempleado|reemplazó tu puesto|despedido|desempleado/i.test(opcion.texto))
+      )
+    ) {
+      if (opcion && opcion.texto && /mantenerse desempleado/i.test(opcion.texto)) {
+        runTrabajo.empleado = false;
+        runTrabajo.trabajo = null;
+        runTrabajo.salarioActual = 0;
+        runTrabajo.anosEnTrabajoActual = 0;
+      } else if (eventoObj && eventoObj.tipo === "DESPIDO") {
+        runTrabajo.empleado = false;
+        runTrabajo.trabajo = null;
+        runTrabajo.salarioActual = 0;
+        runTrabajo.anosEnTrabajoActual = 0;
+      }
     }
-    // C. Si la opción o evento ofrece contratación laboral
+    // si la opción asigna explícitamente un trabajo
     else if (opcion && opcion.trabajo) {
       const trabajoAsignado = await Trabajo.findById(opcion.trabajo);
       if (trabajoAsignado) {
@@ -85,7 +98,6 @@ export async function tomarOpcion(req, res, next) {
         runTrabajo.empleado = true;
         runTrabajo.anosEnTrabajoActual = 0;
 
-        // Regla de Seniority: Si el jugador tiene >= 7 en la habilidad del puesto, entra como Senior (+50% sueldo)
         let esSeniorPorHabilidad = false;
         if (trabajoAsignado.habilidad) {
           const { HabilidadJugador } = await import("../models/habilidadJugador.model.js");
@@ -98,9 +110,12 @@ export async function tomarOpcion(req, res, next) {
         const salarioBase = trabajoAsignado.salarioBase || trabajoAsignado.salarioAnual || 30000;
         runTrabajo.salarioActual = esSeniorPorHabilidad ? Math.round(salarioBase * 1.5) : salarioBase;
       }
-    } else if (
-      (eventoObj && (eventoObj.tipo === "DESEMPLEO" || eventoObj.tipo === "OFERTA")) ||
-      (opcion && opcion.texto && /aceptar|firmar|incorporarse|contrato|oferta|empleo|puesto|trabajar|junior|mid|senior|vp/i.test((opcion.texto || "") + " " + (opcion.titulo || "")))
+    }
+    // si el jugador está desocupado y ACEPTA una oferta laboral sin id específico
+    else if (
+      (!runTrabajo.empleado || !runTrabajo.trabajo) &&
+      opcion && opcion.texto && /aceptar|firmar|incorporarse|sumarse/i.test(opcion.texto) &&
+      !/rechazar|desempleado/i.test(opcion.texto)
     ) {
       const trabajosDisponibles = await Trabajo.find({ edadMinima: { $lte: runTrabajo.edadActual } }).sort({ salarioBase: -1 });
       const trabajoElegido = trabajosDisponibles[0] || (await Trabajo.findOne({ puesto: /Junior/i }));
@@ -123,18 +138,53 @@ export async function tomarOpcion(req, res, next) {
       }
     }
 
-    // D. Aplicar consecuencias de dinero y proyectos a ciegas / riesgo
-    if (eventoObj && (eventoObj.tipo === "EMPRENDIMIENTO" || eventoObj.tipo === "INVERSION") && opcion && /invertir|arriesgar|conectar/i.test(opcion.texto || "")) {
-      // 50% de probabilidad de éxito masivo o pérdida de capital
-      const azarExito = Math.random() >= 0.5;
-      if (azarExito) {
-        runTrabajo.dineroGenerado += 40000;
-      } else {
-        runTrabajo.dineroGenerado = Math.max(0, runTrabajo.dineroGenerado - 15000);
+    // aplicar consecuencias de dinero solo si está empleado, o mantener en 0 si está desempleado
+    if (!runTrabajo.empleado || !runTrabajo.trabajo) {
+      runTrabajo.salarioActual = 0;
+      // Si el jugador está despedido o nunca trabajó, el patrimonio acumulado se fija en 0
+      const tuvoTrabajoPrevio = (runTrabajo.historialAnual || []).some((h) => h.salarioAnual > 0);
+      if (!tuvoTrabajoPrevio) {
+        runTrabajo.dineroGenerado = 0;
       }
-    } else if (eventoObj && typeof eventoObj.bonificacion === "number" && eventoObj.bonificacion !== 0) {
-      const nuevoDinero = runTrabajo.dineroGenerado + eventoObj.bonificacion;
-      runTrabajo.dineroGenerado = Math.max(0, nuevoDinero);
+    } else {
+      if (
+        (eventoObj && (eventoObj.tipo === "CATASTROFE" || /colapso|bolsa|cripto|divorcio/i.test(eventoObj.titulo || ""))) ||
+        (opcion && opcion.texto && /caída del 50%|50% de tu patrimonio|mercado derrumbó|divorcio/i.test(opcion.texto || ""))
+      ) {
+        runTrabajo.dineroGenerado = Math.round((runTrabajo.dineroGenerado || 0) * 0.5);
+      } else if (opcion && opcion.texto && /casarte|celebrar la boda/i.test(opcion.texto || "")) {
+        runTrabajo.dineroGenerado = Math.max(0, (runTrabajo.dineroGenerado || 0) - 25000);
+        runTrabajo.salarioActual = Math.round((runTrabajo.salarioActual || 0) * 0.85);
+      } else if (opcion && opcion.texto && /conectarlo a la computadora/i.test(opcion.texto || "")) {
+        const azarHackeo = Math.random() < 0.70;
+        if (azarHackeo) {
+          runTrabajo.salarioActual = 0; // Suspensión por infectar la red
+        }
+      } else if (opcion && opcion.texto && /rechazar las vacaciones|trabajar sin parar/i.test(opcion.texto || "")) {
+        // Burnout: reducir habilidades principales en backend
+        const { HabilidadJugador } = await import("../models/habilidadJugador.model.js");
+        const habs = await HabilidadJugador.find({ runTrabajo: runTrabajo._id });
+        for (const h of habs) {
+          h.nivel = Math.max(0, h.nivel - 1);
+          await h.save();
+        }
+      } else if (eventoObj && (eventoObj.tipo === "EMPRENDIMIENTO" || eventoObj.tipo === "INVERSION") && opcion && /invertir|arriesgar|conectar/i.test(opcion.texto || "")) {
+        const azarExito = Math.random() >= 0.5;
+        if (azarExito) {
+          runTrabajo.dineroGenerado += 40000;
+        } else {
+          runTrabajo.dineroGenerado = Math.max(0, runTrabajo.dineroGenerado - 15000);
+        }
+      } else if (
+        eventoObj &&
+        typeof eventoObj.bonificacion === "number" &&
+        eventoObj.bonificacion !== 0 &&
+        eventoObj.tipo !== "DESEMPLEO" &&
+        eventoObj.tipo !== "OFERTA"
+      ) {
+        const nuevoDinero = runTrabajo.dineroGenerado + eventoObj.bonificacion;
+        runTrabajo.dineroGenerado = Math.max(0, nuevoDinero);
+      }
     }
 
     // Aplicar los efectos de habilidades de la opción seleccionada

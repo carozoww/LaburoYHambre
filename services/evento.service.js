@@ -128,3 +128,191 @@ export async function verificarAsignacion(idRunTrabajo, idEvento, idHabilidadJug
 
     return {message: "200"};
 }
+
+export async function evaluarEvento(idRunTrabajo) {
+  const runTrabajo = await RunTrabajo.findById(idRunTrabajo);
+  if (!runTrabajo || runTrabajo.estado !== "En proceso") {
+    return null;
+  }
+
+  const anio = runTrabajo.anioActual || 2027;
+  const edad = runTrabajo.edadActual || 18;
+  const esEmpleado = runTrabajo.empleado === true && runTrabajo.trabajo !== null;
+  const dineroActual = runTrabajo.dineroGenerado || 0;
+
+  const transcurridos = anio - 2027;
+  // Evaluación de eventos únicamente cada 3 años como mínimo
+  const esCicloEvaluacion = transcurridos > 0 && transcurridos % 3 === 0;
+
+  if (!esCicloEvaluacion) {
+    return null;
+  }
+
+  // Tirar dado orgánico (75% de probabilidad de que salte un evento en el ciclo de 3 años)
+  if (esEmpleado && Math.random() > 0.75) {
+    return null;
+  }
+
+  let eventosDB = await Evento.find();
+  if (!eventosDB || eventosDB.length === 0) {
+    return null;
+  }
+
+  // obtener lista de IDs de eventos ya resueltos en esta partida
+  const eventosResueltosIds = (runTrabajo.decisionesTomadas || [])
+    .map((d) => d.evento ? d.evento.toString() : d.toString())
+    .filter(Boolean);
+
+  // A. Filtrar por rango de edad (Antes de los 21 años SOLO puede aparecer el evento de conseguir el primer trabajo)
+  eventosDB = eventosDB.filter((ev) => {
+    const min = typeof ev.edadMinima === "number" ? ev.edadMinima : 18;
+    const max = typeof ev.edadMaxima === "number" ? ev.edadMaxima : 65;
+    if (edad < 21 && ev.tipo !== "DESEMPLEO" && ev.tipo !== "OFERTA") {
+      return false;
+    }
+    return edad >= min && edad <= max;
+  });
+
+  // B. Verificar si el jugador previamente aceptó la propuesta de matrimonio
+  let seCasó = false;
+  if (runTrabajo.decisionesTomadas && runTrabajo.decisionesTomadas.length > 0) {
+    const opcionesTomadas = runTrabajo.decisionesTomadas.map((d) => d.opcion ? d.opcion.toString() : "").filter(Boolean);
+    if (opcionesTomadas.length > 0) {
+      const { Opcion } = await import("../models/opcion.model.js");
+      const opcionesDBTomadas = await Opcion.find({ _id: { $in: opcionesTomadas } });
+      seCasó = opcionesDBTomadas.some((op) => /casarte|celebrar la boda/i.test(op.texto || op.titulo || ""));
+    }
+  }
+
+  // C. Si no se casó previamente, NO pueden aparecer los eventos de divorcio ni nacimiento de hijo
+  if (!seCasó) {
+    eventosDB = eventosDB.filter((ev) => {
+      const tit = (ev.titulo || "").toLowerCase();
+      if (tit.includes("divorcio") || tit.includes("hijo")) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // D. Filtrar eventos ya resueltos si repetible === false
+  eventosDB = eventosDB.filter((ev) => {
+    const evId = ev._id.toString();
+    const yaResuelto = eventosResueltosIds.includes(evId);
+    const esRepetible = ev.repetible === true;
+    if (yaResuelto && !esRepetible) {
+      return false;
+    }
+    return true;
+  });
+
+  // E. Filtrar por requisitos de trabajo
+  eventosDB = eventosDB.filter((ev) => {
+    if (ev.reqTrabajo === true && !esEmpleado) {
+      return false;
+    }
+    return true;
+  });
+
+  // F. Filtrar gastos por fondos suficientes
+  eventosDB = eventosDB.filter((ev) => {
+    if (ev.tipo === "GASTO" || (typeof ev.bonificacion === "number" && ev.bonificacion < 0)) {
+      const costo = Math.abs(ev.bonificacion || 0);
+      if (dineroActual < costo) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  if (eventosDB.length === 0) return null;
+
+  // G. Si está desempleado (y edad >= 20), priorizar ofertas laborales si existen
+  if (!esEmpleado && edad >= 20) {
+    const eventosEmpleo = eventosDB.filter((ev) => ev.tipo === "DESEMPLEO" || ev.tipo === "OFERTA");
+    if (eventosEmpleo.length > 0) {
+      eventosDB = eventosEmpleo;
+    }
+  }
+
+  // F. Selección ponderada por probabilidad
+  const totalWeight = eventosDB.reduce((sum, ev) => sum + (ev.probabilidad || 0.5), 0);
+  let randomVal = Math.random() * totalWeight;
+  let selectedIndex = 0;
+
+  for (let i = 0; i < eventosDB.length; i++) {
+    randomVal -= (eventosDB[i].probabilidad || 0.5);
+    if (randomVal <= 0) {
+      selectedIndex = i;
+      break;
+    }
+  }
+
+  const rawEv = eventosDB[selectedIndex] || eventosDB[0];
+  const evId = rawEv._id.toString();
+
+  // Obtener opciones y sus efectos
+  const opcionesDB = await Opcion.find({ evento: evId });
+  const { getEfectosPorOpcion } = await import("./efectoOpcion.service.js");
+
+  const opcionesConEfectos = await Promise.all(
+    opcionesDB.map(async (op) => {
+      const opId = op._id.toString();
+      const relaciones = await getEfectosPorOpcion(opId);
+      const efectos = (relaciones || [])
+        .map((rel) => rel.efecto)
+        .filter((ef) => ef && typeof ef === "object")
+        .map((ef) => ({
+          id: ef._id.toString(),
+          _id: ef._id.toString(),
+          tipo: ef.tipo || "MODIFICAR_HABILIDAD",
+          objetivo: ef.objetivo || "Backend",
+          valor: typeof ef.valor === "number" ? ef.valor : 1,
+        }));
+
+      let rawTexto = op.texto || op.titulo || "Seleccionar opción";
+
+      if (!esEmpleado && /conservar|estabilidad|empresa actual|tu empresa|mantener/i.test(rawTexto)) {
+        rawTexto = "Rechazar oferta y mantenerse desempleado";
+      } else if (esEmpleado && /conservar|estabilidad|empresa actual|tu empresa/i.test(rawTexto)) {
+        rawTexto = "Rechazar oferta y mantenerse en el trabajo actual";
+      }
+
+      // Ofertas laborales: incluir el salario ofrecido en paréntesis ($XX,XXX / año)
+      if ((rawEv.tipo === "DESEMPLEO" || rawEv.tipo === "OFERTA") && rawEv.bonificacion && /aceptar|firmar|incorporarse|sumarse/i.test(rawTexto)) {
+        if (!rawTexto.includes("$")) {
+          rawTexto = `${rawTexto} ($${rawEv.bonificacion.toLocaleString()} / año)`;
+        }
+      }
+
+      // Gastos de una sola opción: incluir el monto en paréntesis ($X,XXX)
+      if ((rawEv.tipo === "GASTO" || (typeof rawEv.bonificacion === "number" && rawEv.bonificacion < 0)) && opcionesDB.length === 1) {
+        const costo = Math.abs(rawEv.bonificacion || 0);
+        if (costo > 0 && !rawTexto.includes("$")) {
+          rawTexto = `${rawTexto} ($${costo.toLocaleString()})`;
+        }
+      }
+
+      return {
+        id: opId,
+        _id: opId,
+        evento: evId,
+        titulo: op.titulo,
+        texto: rawTexto,
+        trabajo: op.trabajo,
+        efectos,
+      };
+    })
+  );
+
+  return {
+    id: evId,
+    _id: evId,
+    titulo: rawEv.titulo,
+    descripcion: rawEv.descripcion,
+    tipo: rawEv.tipo,
+    bonificacion: rawEv.bonificacion,
+    probabilidad: rawEv.probabilidad,
+    opciones: opcionesConEfectos,
+  };
+}

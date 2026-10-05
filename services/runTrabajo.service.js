@@ -7,31 +7,26 @@ import { Estudio } from "../models/estudio.model.js";
 export async function createRunTrabajo(idJugador) {
   // Buscar el único estudio: Tecnólogo en Informática
   const estudioTecnologo = await Estudio.findOne({ nombre: new RegExp("Tecnólogo en Informática", "i") });
-  const trabajoInicial = await Trabajo.findOne({ puesto: new RegExp("Pasante Trainee de Informática", "i") }) ||
-                         await Trabajo.findOne({ puesto: new RegExp("Trainee", "i") });
-
-  const salarioInicial = trabajoInicial ? (trabajoInicial.salarioBase || 10000) : 10000;
-  const puestoTexto = trabajoInicial ? `${trabajoInicial.puesto} @ Startup Tech Innovadora` : 'Pasante Trainee de Informática @ Startup Tech Innovadora';
 
   const nuevaRun = await RunTrabajo.create({
     user: idJugador,
     fecha: new Date(),
     edadActual: 18,
     anioActual: 2027, // Año inicial 2027
-    trabajo: trabajoInicial ? trabajoInicial._id : null,
+    trabajo: null,
     estudio: estudioTecnologo ? estudioTecnologo._id : null,
-    salarioActual: salarioInicial,
+    salarioActual: 0,
     estado: "En proceso",
-    empleado: true,
-    dineroGenerado: salarioInicial,
+    empleado: false,
+    dineroGenerado: 0,
     anosEnTrabajoActual: 0,
     decisionesTomadas: [],
     historialAnual: [{
       edad: 18,
       anio: 2027,
-      puestoEmpresa: puestoTexto,
-      salarioAnual: salarioInicial,
-      dineroAcumulado: salarioInicial
+      puestoEmpresa: 'DESPEDIDO / En búsqueda laboral',
+      salarioAnual: 0,
+      dineroAcumulado: 0
     }]
   });
 
@@ -76,31 +71,34 @@ export async function returnRunTrabajoActivo(idUser) {
 }
 
 export async function increaseDinero(idUsuario) {
-  const runTrabajo = await returnRunTrabajoActivo(idUsuario);
+  let runTrabajo = await returnRunTrabajoActivo(idUsuario);
   if (!runTrabajo) {
+    const allRuns = await RunTrabajo.find({ user: idUsuario }).sort({ fecha: -1 });
+    if (allRuns && allRuns.length > 0) return allRuns[0];
     throw new Error('No existe una partida activa para este usuario');
   }
-  if (runTrabajo.estado === "Completada") {
-    throw new Error('La partida ya está completada');
+  if (runTrabajo.estado === "Completada" || runTrabajo.estado === "FINALIZADA" || runTrabajo.estado === "MUERTO") {
+    return runTrabajo;
   }
 
-  // Si está despedido (empleado === false o sin trabajo), el incremento es estrictamente 0
-  const incremento = (runTrabajo.empleado === false || !runTrabajo.trabajo)
-    ? 0
-    : (runTrabajo.salarioActual || (runTrabajo.trabajo ? runTrabajo.trabajo.salarioBase : 10000));
+  // Si está desempleado, despedido o no tiene salario activo, el incremento es estrictamente 0
+  const esDesempleado = !runTrabajo.empleado || !runTrabajo.trabajo || !runTrabajo.salarioActual || runTrabajo.salarioActual <= 0;
+  const incremento = esDesempleado ? 0 : runTrabajo.salarioActual;
 
-  runTrabajo.dineroGenerado += incremento;
+  runTrabajo.dineroGenerado = (runTrabajo.dineroGenerado || 0) + incremento;
   await runTrabajo.save();
   return runTrabajo;
 }
 
 export async function increaseEdad(idUsuario) {
-  const runTrabajo = await returnRunTrabajoActivo(idUsuario);
+  let runTrabajo = await returnRunTrabajoActivo(idUsuario);
   if (!runTrabajo) {
+    const allRuns = await RunTrabajo.find({ user: idUsuario }).sort({ fecha: -1 });
+    if (allRuns && allRuns.length > 0) return allRuns[0];
     throw new Error('No existe una partida activa para este usuario');
   }
-  if (runTrabajo.estado === "Completada") {
-    throw new Error('La partida ya está completada');
+  if (runTrabajo.estado === "Completada" || runTrabajo.estado === "FINALIZADA" || runTrabajo.estado === "MUERTO") {
+    return runTrabajo;
   }
 
   runTrabajo.edadActual += 1;
@@ -233,7 +231,8 @@ export async function increaseAnio(idRunTrabajo, idUsuario) {
 export async function startRun(idUsuario) {
   const existeRunActiva = await returnRunTrabajoActivo(idUsuario);
   if (existeRunActiva) {
-    return existeRunActiva;
+    existeRunActiva.estado = "Completada";
+    await existeRunActiva.save();
   }
   return createRunTrabajo(idUsuario);
 }
