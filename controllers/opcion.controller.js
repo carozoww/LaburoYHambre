@@ -79,10 +79,10 @@ export async function tomarOpcion(req, res, next) {
       )
     ) {
       if (opcion && opcion.texto && /mantenerse desempleado/i.test(opcion.texto)) {
-        runTrabajo.empleado = false;
+        /*runTrabajo.empleado = false;
         runTrabajo.trabajo = null;
         runTrabajo.salarioActual = 0;
-        runTrabajo.anosEnTrabajoActual = 0;
+        runTrabajo.anosEnTrabajoActual = 0; */
       } else if (eventoObj && eventoObj.tipo === "DESPIDO") {
         runTrabajo.empleado = false;
         runTrabajo.trabajo = null;

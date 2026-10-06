@@ -149,9 +149,10 @@ export async function evaluarEvento(idRunTrabajo) {
   }
 
   // Tirar dado orgánico (75% de probabilidad de que salte un evento en el ciclo de 3 años)
-  if (esEmpleado && Math.random() > 0.75) {
+  /*if (esEmpleado && Math.random() > 0.75) {
+
     return null;
-  }
+  } */
 
   let eventosDB = await Evento.find();
   if (!eventosDB || eventosDB.length === 0) {
